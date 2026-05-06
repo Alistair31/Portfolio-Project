@@ -6,9 +6,10 @@ This is a tutored project directed by <placeholder>
 <details>
   <summary><h2>Table of Contents</h2></summary>
   <ol>
-    <li><a href="#TEAM FORMATION">TEAM FORMATION</a>
-    <li><a href="#RESEARCH AND BRAINSTORMING">RESEARCH AND BRAINSTORMING</a></li>
-    <li><a href="#MVP CONCEPT">MVP CONCEPT</a></li>
+    <li><a href="#team-formation">TEAM FORMATION</a>
+    <li><a href="#research-and-brainstorming">RESEARCH AND BRAINSTORMING</a></li>
+    <li><a href="#idea-evaluation">IDEA EVALUATION</a></li>
+	<li><a href="#decision-and-refinement">DECISION AND REFINEMENT</a></li>
   </ol>
 </details>
 
@@ -95,20 +96,22 @@ Following a meeting with the team and the lead project, we decide to use x<place
 ```mermaid
 ---
 config:
-  layout: dagre
+  layout: fixed
 ---
 flowchart LR
     A["Login(user)"] --> B["Home -&gt; victims side or witness side"]
     B --> C["either side -&gt; post a testimony"]
     C --> D["Admin side/dashboard -&gt; testimony retrieved and analyse"]
-    D --> E["After analyse, investigation and protection of the victims/witness"]
-    E --> F["Stash the incident and build statistics around the issues for furthermore analysis"]
+    D --> E["After analyse, investigation and protection of the victims/witness"] & G["Follow up of the current complain"]
+    E --> F["Stash the incident and build statistics around the issues for furthermore analysis"] & G
+    G --> B
 
     style A fill:#C8E6C9,color:#000000
     style B fill:#C8E6C9,color:#000000
     style C fill:#C8E6C9,color:#000000
     style D fill:#C8E6C9,color:#000000
     style E fill:#C8E6C9,stroke:#000000,color:#000000
+    style G color:#000000,fill:#C8E6C9
     style F fill:#C8E6C9,stroke:#000000,color:#000000
 ```
 
