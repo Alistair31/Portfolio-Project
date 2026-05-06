@@ -37,11 +37,14 @@ At the first glance, there are several examples of apps that aims to help the vi
 
 We then discuss about what technology would be the best to use and what type of database management system to put our application on, based on an expectation of number of people that would have a account on it.
 
-For the developpment tools, we use VSCode, git/git hub and Flutter for build an mobile application.  
+For the developpment tools, we use VSCode, git/github, NextJs and Flutter for build an mobile application.  
 <div align="center">
 	
 [![VS Code](https://img.shields.io/badge/VS%20Code-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white)](https://code.visualstudio.com/)
 [![Flutter](https://img.shields.io/badge/Flutter-%2302569B.svg?style=for-the-badge&logo=Flutter&logoColor=white)](https://flutter.dev/)
+[![Next JS](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs)](https://nextjs.org/)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github)](https://github.com/)
+[![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git)](https://git-scm.com)
 
 </div>
 
