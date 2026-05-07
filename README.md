@@ -10,7 +10,7 @@ This is a tutored project directed by Romain BALLAIS and Thomas SPITZ
     <li><a href="#research-and-brainstorming">RESEARCH AND BRAINSTORMING</a></li>
     <li><a href="#idea-evaluation">IDEA EVALUATION</a></li>
 	<li><a href="#decision-and-refinement">DECISION AND REFINEMENT</a></li>
-	<li><a href="#user-interaction-diagram"></a>USER INTERACTION DIAGRAM</li>
+	<li><a href="#user-interaction-diagram">USER INTERACTION DIAGRAM</a></li>
   </ol>
 </details>
 
