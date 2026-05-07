@@ -2,7 +2,7 @@
 
 <hi>HAVEN LAB</h1>  
 
-This is a tutored project directed by <placeholder>
+This is a tutored project directed by Romain BALLAIS and Thomas SPITZ
 <details>
   <summary><h2>Table of Contents</h2></summary>
   <ol>
@@ -10,6 +10,7 @@ This is a tutored project directed by <placeholder>
     <li><a href="#research-and-brainstorming">RESEARCH AND BRAINSTORMING</a></li>
     <li><a href="#idea-evaluation">IDEA EVALUATION</a></li>
 	<li><a href="#decision-and-refinement">DECISION AND REFINEMENT</a></li>
+	<li><a href="#user-interaction-diagram"></a>USER INTERACTION DIAGRAM</li>
   </ol>
 </details>
 
@@ -87,6 +88,7 @@ Priority color code:
 |Harassment signalisation (user) |A page with multiple choice (type of harassment, gravity, effect on victim                                |Anonymisation system (3 levels)                                          ||🟥|
 |Witness signalisation (user)    |A page similar to the harassment signalisation,                                                           |Same as Harassment signalisation                                         ||🟨|
 |Dashboard (admin)               |A dashboard for a simple access to a synthesis of all issues and statistics.                              |                                                                         ||🟥|
+|Issue tracker (user)            |A page the user can follow up their signalement.                                                          |                                                                         ||🟥|
 |Issues tracker (admin)          |A page that regroup all signalisation's follow up.                                                        |                                                                         ||🟥|
 |Statistic (admin)               |A page that shows all statistics with precision and their evolution on time.                              |                                                                         ||🟨|
 |Chatbot integration(optionnal)  |An AI chatbot (provided by the firm) to integrate for helping victims to communicate.                     |                                                                         ||🟩|
@@ -94,8 +96,33 @@ Priority color code:
 
 <h2><u>DECISION AND REFINEMENT</u></h2>
 
-Following a meeting with the team and the lead project, we decide to use x<placeholder> for the database
+Following a meeting with the team and the lead project we recieved the statement of work.
+After reading and brainstorming about it, we define a MVP to realize:  
 
+- A mobile first application for the protection of students against harassment.  
+
+The project as been launch because of a lack of similar entity specialized for this subject.
+The unfortunate students that could be victims or witness of harassment or any other problematic/dangerous behavior will have a platform to post testimony. This will then be analyse by the staff or specialist if needed to ensure that those students will get the necessary help.  
+
+This MVP will be built with the basic feature:
+- A highly secured database with Prisma/PostGreSQL.
+- A login page that redirect to different page depending on the privilege level of the user logged.
+- Home pages: signalement for students, admin dashboard for school staff, statistics for Ministry of National Education.
+- A signalment page for students to post testimony of the issues.
+- A issues tracker pages: one for students to follow their own testimony, one for admins to follow all of them.  
+
+Within the given deadline: :
+- we will deliver a mobile application with basics pages(home, dashboard, signalment, tracker) and a secure database.
+- However some features may be too complex or not the highest priority (Chatbot AI).  
+
+The identified risks are:
+- The securisation of personal data (high priority).
+- The privilege level attribution and management.
+- The impact of the chosen color palette  on the user (especially the students) for the frontend.  
+
+<h2><u>USER INTERACTION DIAGRAM</u></h2>  
+
+This is a basic representation of what happen when an user interact with the application:
 
 ```mermaid
 ---
@@ -118,6 +145,12 @@ flowchart LR
     style G color:#000000,fill:#C8E6C9
     style F fill:#C8E6C9,stroke:#000000,color:#000000
 ```
+
+- The user login to the application and land on the user home page.
+- The user can post a testimony as a victim or witness.
+- when posted, it can be followed up by the owner of the testimony or an admin (school staff) at all steps.
+- Staff analyze the testimony, investigate and react if necessary.
+- Stash the report, build statistics.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
