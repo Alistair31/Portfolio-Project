@@ -33,7 +33,7 @@ HavenLab is a platform designed as a mobile application to fight against harassm
 A prototype has been already developped by the firm, it give us a better idea of what they want and also the frontend style.  
   
 We try to find similar application or website to see what was already done and briefly study their impact on users.
-At the first glance, there are several examples of apps that aims to help the victims and to protect them.
+At the first glance, there are several examples of apps that aims to help the victims and to protect them but few are focused on harassment at school.
 
 We then discuss about what technology would be the best to use and what type of database management system to put our application on, based on an expectation of number of people that would have a account on it.
 
@@ -60,8 +60,8 @@ For the database, we have to choose between PostGre and Mongodb, taking in consi
 After choosing all the stacks necessary, we then talk about the main objective of the project and how we might translate it into a functional software.
 The idea is:  
 - a mobile application that provide, to all students, a way to post a report of harrassement and other problematic behavior.
-- a AI chatbot integrated for support of the victims, give advice and/or redirect them to the specialised school's staff.
 - a way for the staff to follow the issues for a better care of students.
+- a AI chatbot integrated for support of the victims, give advice and/or redirect them to the specialised school's staff.(potential risk)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -70,7 +70,8 @@ The idea is:
 We did a feasibility study for evaluate the project and build an MVP concept. This has several criteria to define:
 
 - Is the project feasable for a beginner team ( on a scale from 0 to 5 )
-- 
+- How it will help students to communicate easily and freely about the issues
+- What technology we will use for an optimal and scalable solution
 
 Priority color code:  
 
@@ -80,15 +81,15 @@ Priority color code:
 
 |Feature|Details|Challenges|Feasibility|Priority|
 |:--|:--|:--|:--|:--:|
-|Database|Implement the chosen database for the application|Data security must be the higher possible, priority n°1||🟥|
-|Login page|A login page with basics redirection. (login, register, password forgotted)|||🟥|
-|Home page (user)|A home page with rapid access to functionality. (harassment signalisation, witness harassment, follow up)|||🟥|
-|Harassment signalisation (user)|A page with multiple choice (type of harassment, gravity, effect on victim|||🟥|
-|Witness signalisation (user)|A page similar to the harassment signalisation, |||🟨|
-|Dashboard (admin)|A dashboard for a simple access to a synthesis of all issues and statistics. |||🟥|
-|Issues tracker (admin)|A page that regroup all signalisation's follow up. |||🟥|
-|Statistic (admin)|A page that shows all statistics with precision and their evolution on time.|||🟨|
-|Chatbot integration[optionnal]|An AI chatbot (provided by the firm) to integrate for helping victims to communicate.|||🟩|
+|Database                        |Implement the chosen database for the application                                                         |Data security must be the higher possible, priority n°1                  ||🟥|
+|Login page                      |A login page with basics redirection. (login, register, password forgotted)                               |Depending of the user(privilege level), redirect to a specific home page ||🟥|
+|Home page (user)                |A home page with rapid access to functionality. (harassment signalisation, witness harassment, follow up) |Different home page/route to securize                                    ||🟥|
+|Harassment signalisation (user) |A page with multiple choice (type of harassment, gravity, effect on victim                                |Anonymisation system (3 levels)                                          ||🟥|
+|Witness signalisation (user)    |A page similar to the harassment signalisation,                                                           |Same as Harassment signalisation                                         ||🟨|
+|Dashboard (admin)               |A dashboard for a simple access to a synthesis of all issues and statistics.                              |                                                                         ||🟥|
+|Issues tracker (admin)          |A page that regroup all signalisation's follow up.                                                        |                                                                         ||🟥|
+|Statistic (admin)               |A page that shows all statistics with precision and their evolution on time.                              |                                                                         ||🟨|
+|Chatbot integration(optionnal)  |An AI chatbot (provided by the firm) to integrate for helping victims to communicate.                     |                                                                         ||🟩|
 
 
 <h2><u>DECISION AND REFINEMENT</u></h2>
