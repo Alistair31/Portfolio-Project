@@ -82,16 +82,16 @@ Priority color code:
 
 |Feature|Details|Challenges|Feasibility|Priority|
 |:--|:--|:--|:--|:--:|
-|Database                        |Implement the chosen database for the application                                                         |Data security must be the higher possible, priority n°1                  ||🟥|
-|Login page                      |A login page with basics redirection. (login, register, password forgotted)                               |Depending of the user(privilege level), redirect to a specific home page ||🟥|
-|Home page (user)                |A home page with rapid access to functionality. (harassment signalisation, witness harassment, follow up) |Different home page/route to securize                                    ||🟥|
-|Harassment signalisation (user) |A page with multiple choice (type of harassment, gravity, effect on victim                                |Anonymisation system (3 levels)                                          ||🟥|
-|Witness signalisation (user)    |A page similar to the harassment signalisation,                                                           |Same as Harassment signalisation                                         ||🟨|
-|Dashboard (admin)               |A dashboard for a simple access to a synthesis of all issues and statistics.                              |                                                                         ||🟥|
-|Issue tracker (user)            |A page the user can follow up their signalement.                                                          |                                                                         ||🟥|
-|Issues tracker (admin)          |A page that regroup all signalisation's follow up.                                                        |                                                                         ||🟥|
-|Statistic (admin)               |A page that shows all statistics with precision and their evolution on time.                              |                                                                         ||🟨|
-|Chatbot integration(optionnal)  |An AI chatbot (provided by the firm) to integrate for helping victims to communicate.                     |                                                                         ||🟩|
+|Database                        |Implement the chosen database for the application                                                         |Data security must be the higher possible, priority n°1                  |5/5|🟥|
+|Login page                      |A login page with basics redirection. (login, register, password forgotted)                               |Depending of the user(privilege level), redirect to a specific home page |1/5|🟥|
+|Home page (user)                |A home page with rapid access to functionality. (harassment signalisation, witness harassment, follow up) |Different home page/route to securize                                    |2/5|🟥|
+|Harassment signalisation (user) |A page with multiple choice (type of harassment, gravity, effect on victim                                |Anonymisation system (3 levels)                                          |2/5|🟥|
+|Witness signalisation (user)    |A page similar to the harassment signalisation,                                                           |Same as Harassment signalisation                                         |2/5|🟨|
+|Dashboard (admin)               |A dashboard for a simple access to a synthesis of all issues and statistics.                              |                                                                         |3.5/5|🟥|
+|Issue tracker (user)            |A page the user can follow up their signalement.                                                          |                                                                         |3/5|🟥|
+|Issues tracker (admin)          |A page that regroup all signalisation's follow up.                                                        |                                                                         |3/5|🟥|
+|Statistic (admin)               |A page that shows all statistics with precision and their evolution on time.                              |                                                                         |2/5|🟨|
+|Chatbot integration(optionnal)  |An AI chatbot (provided by the firm) to integrate for helping victims to communicate.                     |Potential danger concerning the response of the bot                      |5/5|🟩|
 
 
 <h2><u>DECISION AND REFINEMENT</u></h2>
