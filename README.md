@@ -65,7 +65,7 @@ After choosing all the stacks necessary, we then talk about the main objective o
 The idea is:  
 - a mobile application that provide, to all students, a way to post a report of harrassement and other problematic behavior.
 - a way for the staff to follow the issues for a better care of students.
-- a AI chatbot integrated for support of the victims, give advice and/or redirect them to the specialised school's staff.(potential risk)
+- a AI chatbot integrated for support of the victims, give advice and/or redirect them to the specialised school's staff. (potential risk)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -110,7 +110,7 @@ The unfortunate students that could be victims or witness of harassment or any o
 This MVP will be built with the basic feature:
 - A highly secured database with Prisma/PostGreSQL.
 - A login page that redirect to different page depending on the privilege level of the user logged.
-- Home pages: signalement for students, admin dashboard for school staff, statistics for Ministry of National Education.
+- Home pages: signalment for students, admin dashboard for school staff, statistics for Ministry of National Education.
 - A signalment page for students to post testimony of the issues.
 - A issues tracker pages: one for students to follow their own testimony, one for admins to follow all of them.  
 
