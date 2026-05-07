@@ -1,8 +1,11 @@
 <a id="readme-top"></a>
 
-<hi>HAVEN LAB</h1>  
+<h1 align="center">HAVEN LAB</h1>
 
-This is a tutored project directed by Romain BALLAIS and Thomas SPITZ
+<p align="center">
+  This is a tutored project directed by Romain BALLAIS and Thomas SPITZ
+</p>
+
 <details>
   <summary><h2>Table of Contents</h2></summary>
   <ol>
