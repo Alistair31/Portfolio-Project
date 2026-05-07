@@ -65,7 +65,7 @@ After choosing all the stacks necessary, we then talk about the main objective o
 The idea is:  
 - a mobile application that provide, to all students, a way to post a report of harrassement and other problematic behavior.
 - a way for the staff to follow the issues for a better care of students.
-- a AI chatbot integrated for support of the victims, give advice and/or redirect them to the specialised school's staff. (potential risk)
+- a AI chatbot integrated for support of the victims, give advice and/or redirect them to the specialised school's staff. (potential risk)  
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -94,8 +94,9 @@ Priority color code:
 |Issue tracker (user)            |A page the user can follow up their signalement.                                                          |                                                                         |3/5|🟥|
 |Issues tracker (admin)          |A page that regroup all signalisation's follow up.                                                        |                                                                         |3/5|🟥|
 |Statistic (admin)               |A page that shows all statistics with precision and their evolution on time.                              |                                                                         |2/5|🟨|
-|Chatbot integration(optionnal)  |An AI chatbot (provided by the firm) to integrate for helping victims to communicate.                     |Potential danger concerning the response of the bot                      |5/5|🟩|
+|Chatbot integration(optionnal)  |An AI chatbot (provided by the firm) to integrate for helping victims to communicate.                     |Potential danger concerning the response of the bot                      |5/5|🟩|  
 
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <h2><u>DECISION AND REFINEMENT</u></h2>
 
@@ -122,6 +123,8 @@ The identified risks are:
 - The securisation of personal data (high priority).
 - The privilege level attribution and management.
 - The impact of the chosen color palette  on the user (especially the students) for the frontend.  
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <h2><u>USER INTERACTION DIAGRAM</u></h2>  
 
