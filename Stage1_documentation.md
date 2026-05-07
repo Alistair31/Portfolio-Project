@@ -20,7 +20,7 @@
 <h2><u>TEAM FORMATION</u></h2>  
 <p align="center">
     <a href="https://github.com/JarodLgeOff"><img src="https://img.shields.io/badge/github-JarodLgeOff-blue?logo=github&style=for-the-badge"></a>
-    <a href="https://github.com/Alistair31/holbertonschool-simple_shell/graphs/contributors"><img src="https://img.shields.io/github/contributors/Alistair31/holbertonschool-simple_shell.svg?style=for-the-badge" alt="Contributors"></a>
+    <a href="https://github.com/Alistair31/Portfolio-Project/graphs/contributors"><img src="https://img.shields.io/github/contributors/Alistair31/holbertonschool-simple_shell.svg?style=for-the-badge" alt="Contributors"></a>
     <a href="https://github.com/Alistair31"><img src="https://img.shields.io/badge/github-Alistair31-blue?logo=github&style=for-the-badge"></a>
   </p>
 LANGE Jarod: Project Manager/Fullstack developer 
