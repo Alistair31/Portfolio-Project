@@ -57,7 +57,7 @@ This section represent mandatory feature for the MVP:
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <h2 id="mockups">Mockups</h2>
-
+PLACEHOLDER FIGMA
 <iframe
   src="https://www.figma.com/embed?embed_host=share&url=TON_URL_FIGMA"
   width="100%"
