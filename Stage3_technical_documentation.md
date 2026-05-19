@@ -2,7 +2,6 @@
 
 
 <h1 align=center><strong>Technical Documentation</strong></h1>
-<h1 align=center>Technical Documentation</h1>
 
 <details>
   <summary>Table of Contents</summary>
@@ -36,24 +35,26 @@ This can be separated in four categories following the MoSCoW method (Must have,
 
 This section represent mandatory feature for the MVP:
 <ul>
-  <li>As a user, I want to be able to log in or out safely with my account </li>
-  <li>As a user, I want to access to the main feature easily</li>
-  <li>As a user, </li>
-  <li>As a admin, </li>
-  <li>As a admin, </li>
-  <li>As a admin, </li>
+  <li>As a user, I want to be able to log in or out safely with my account.</li>
+  <li>As a user, I want to access to the main feature easily.</li>
+  <li>As a user, I want to post a testimony.</li>
+  <li>As a user, I want to follow the post i have made.</li>
+  <li>As a admin/staff, I want to retrieve testimonies for investigation.</li>
+  <li>As a admin/staff, I want to access to a dashboard for data synthesis.</li>
+  <li>As a admin/staff, I want to have access to all follow up.</li>
 </ul>
 
 <h3><strong>Should have</strong></h3>  
 
 <ul>
-  
+  <li>As a user, I want to post a testimony as a witness.</li>
+  <li>As a admin/staff, I want to have statistics on harassment.</li>
 </ul>
 
 <h3><strong>Could have</strong></h3>  
 
 <ul>
-  
+  <li>As a user, I want to use a AI chatbot for helping me .</li>
 </ul>
 
 <h3><strong>Won’t have</strong></h3>  
@@ -61,7 +62,6 @@ This section represent mandatory feature for the MVP:
 <ul>
   
 </ul>
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <h2 id="mockups">Mockups</h2>
