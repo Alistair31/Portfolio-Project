@@ -18,6 +18,14 @@
   </ul>
 </details>
 
+<p align="center">
+    <img src="https://skillicons.dev/icons?i=flutter,nextjs,prisma,postgresql,nodejs">
+</p>
+
+<p align="center">
+    <b>Flutter</b> • <b>Next.js</b> • <b>Prisma</b> • <b>PostgreSql</b> • <b>Node.js</b>
+</p>
+
 <h2 id="user-stories">User Stories</h2>
 
 The user stories is there to briefly describe what an user will interact with the application.  
