@@ -115,6 +115,16 @@ flowchart TB
 
 <h2 id="structure">Structure</h2>
 
+|Components            |Type|Description                                                                         |
+|:---------------------|:---|:-----------------------------------------------------------------------------------|
+|Login                 |Page|Users can login if they have credentials                                            |
+|Home (User)           |Page|For students logged, access to features and follow up status (if any)               |
+|Home (Admin)          |Page|For staff members logged, access to specific features and last report(or urgent one)|
+|Report (User)         |Page|Students can post a report on incident they have been a victim or a witness         |
+|Counter report (Admin)|Page|Staff members can post a follow up of the incident                                  |
+|Issues tracker (User) |Page|Complete follow up of their own report                                              |
+||||
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <h2 id="sequence-diagram">Sequence Diagram</h2>
