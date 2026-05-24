@@ -67,7 +67,7 @@ This section represent mandatory feature for the MVP:
 <h2 id="mockups">Mockups</h2>
 PLACEHOLDER FIGMA
 <iframe
-  src="https://www.figma.com/embed?embed_host=share&url=TON_URL_FIGMA"
+  src="https://www.figma.com/design/QVPO9YaJcaw3oD79mIXDn0/Haven?node-id=37-66&m=dev&t=abJ5ukLg5PqKKDMN-1"
   width="100%"
   height="600"
   style="border: 0; border-radius: 12px;"
@@ -80,35 +80,7 @@ PLACEHOLDER FIGMA
 
 <h2 id="architecture">Architecture</h2>  
 
-
-```mermaid
----
-config:
-  layout: fixed
----
-flowchart TB
- subgraph BACKEND["Backend — Next.js API"]
-        AUTH["Auth & Routing"]
-        API["REST API"]
-        ANON["Anonymization"]
-  end
- subgraph s1["Frontend"]
-        FLUTTER["📱 Flutter\nMobile App"]
-        WEB["🌐 Next.js\nWeb Portal"]
-  end
-    FLUTTER -- login --> AUTH
-    WEB -- login --> AUTH
-    AUTH -- "role-based redirect" --> FLUTTER & WEB
-    FLUTTER -- submit report --> ANON
-    ANON -- anonymized --> API
-    FLUTTER -- track report --> API
-    WEB -- manage reports / stats --> API
-    API -- read / write --> DB[("PostgreSQL\nvia Prisma")]
-    FLUTTER <-- victim support --> CHATBOT(["🤖 AI Chatbot\n(optional)"])
-
-    style s1 fill:#C8E6C9
-    style BACKEND fill:#FFF9C4
-```
+![Architecture Diagram](images/arch.svg)
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
