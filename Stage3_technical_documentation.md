@@ -67,7 +67,7 @@ This section represent mandatory feature for the MVP:
 <h2 id="mockups">Mockups</h2>
 PLACEHOLDER FIGMA
 <iframe
-  src="https://www.figma.com/design/QVPO9YaJcaw3oD79mIXDn0/Haven?node-id=37-66&m=dev&t=abJ5ukLg5PqKKDMN-1"
+  src="[https://www.figma.com/embed?embed_host=share&url=TON_URL_FIGMA](https://www.figma.com/design/QVPO9YaJcaw3oD79mIXDn0/Haven?node-id=37-66&m=dev&t=abJ5ukLg5PqKKDMN-1)"
   width="100%"
   height="600"
   style="border: 0; border-radius: 12px;"
