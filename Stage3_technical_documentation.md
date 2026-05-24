@@ -54,7 +54,7 @@ This section represent mandatory feature for the MVP:
 <h3><strong>Could have</strong></h3>  
 
 <ul>
-  
+  <li> As an user, I want to have a little box for news or agenda recall</li>
 </ul>
 
 <h3><strong>Won’t have</strong></h3>  
@@ -65,7 +65,22 @@ This section represent mandatory feature for the MVP:
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <h2 id="mockups">Mockups</h2>
-PLACEHOLDER FIGMA
+
+Here is a basic render of every pages of the future app.
+
+<ul>
+  <li>MVP: Login page: A simple login page with the logo on top</li>
+  <li>MVP: Register Page: A normal register page with an addition of the class to refer </li>
+  <li>MVP: Home Page (User): A home page for students with an acces to the report page and the follwo up of their own report</li>
+  <li>MVP: Home Page (Admin): A home page for staff members. It give access to tracker, dashboard and a box on the top where the most recent and most urgent report will be display.</li>
+  <li>MVP: Report Page (User): A page where students could report an issue. It is composed of preset, the type of issue, the report itself and legal information (if needed).</li>
+  <li>MVP: Tracker (Admin): A page where staff members could retrieve any report organised by filter, with a box on top for urgent report.</li>
+  <li>MVP: Get Report Page (Admin): A page where staff members have a precise look on a report and can do a follow up.</li>
+  <li>MVP: Follow up Page (Admin): A page where staff members have the report on top and can write a follow up, change it status or close it when it is needed.</li>
+  <li>Dashboard Page: Could replace the admin home page for better clarity and less clicks. Regroup every information needed, summarised it and link to the other pages</li>
+  <li>Staff/Ministery Chat Page: Could be useful in condition to be very secure.</li>
+  <li>Statistics Page: Will give precise statistics on the type of reports based on certain characteristics.</li>
+</ul>
 <iframe
   src="https://www.figma.com/design/QVPO9YaJcaw3oD79mIXDn0/Haven?node-id=38-151&m=dev&t=abJ5ukLg5PqKKDMN-1"
   width="100%"
