@@ -97,22 +97,27 @@ Here is a basic render of every page of the future app.
 
 <h2 id="architecture">Architecture</h2>
 
-The application follows a client-server architecture with two separate frontends sharing a single backend API.
+The application follows a client-server architecture centered around a single mobile application and a dedicated backend API.
 
-- **Flutter** (mobile) is used by students to submit reports and track their status.
-- **Next.js** (web) is the admin dashboard used by staff members.
-- Both frontends communicate with a **Node.js REST API**, which handles authentication, business logic, and anonymization.
-- **Prisma** acts as the ORM between the API and the **PostgreSQL** database.
-- **Firebase Cloud Messaging (FCM)** is used to push notifications to students when their report status changes.
+- **Flutter** is the main application used by both students and staff members.
+  - Students can submit reports and track their status.
+  - Staff members can review reports, manage follow-ups, and update report statuses.
+- **Next.js** is used exclusively as the backend server and API layer.
+- The backend exposes a **REST API** responsible for:
+  - authentication,
+  - business logic,
+  - anonymization,
+  - and role-based access control.
+- **Prisma** acts as the ORM between the backend and the **PostgreSQL** database.
+- **Firebase Cloud Messaging (FCM)** is used to send push notifications when a report status changes.
 
 ![Architecture Diagram](https://raw.githubusercontent.com/Alistair31/Portfolio-Project/Gabriel/Images/arch.svg)
-
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <h2 id="class-diagram">Class Diagram</h2>
 
-This diagram represents the relationships between the data models and services of the application.
+This diagram represents the relationships between the application's data models and backend services.
 
 ```mermaid
 classDiagram
@@ -178,7 +183,7 @@ classDiagram
         +ReportStatus newStatus
         +DateTime createdAt
         +String reportId
-        +String adminId
+        +String staffId
     }
 
     class Notification {
@@ -193,7 +198,6 @@ classDiagram
     class AuthService {
         +register(email, password, name, className) User
         +login(email, password) String
-        +logout(token) void
         +validateToken(token) User
         -hashPassword(password) String
         -generateJWT(user) String
@@ -226,14 +230,14 @@ classDiagram
     Report --> Role : targeted at
 
     User "1" --> "0..*" Report : submits
-    User "1" --> "0..*" FollowUp : writes
+    User "1" --> "0..*" FollowUp : manages
     User "1" --> "0..*" Notification : receives
-    Report "1" --> "0..1" FollowUp : has
+    Report "1" --> "0..*" FollowUp : has
     Report "1" --> "0..*" Notification : triggers
 
     AuthService ..> User : creates / validates
-    AnonymizationService ..> Report : strips identity before storage
-    AccessControlService ..> Report : checks if user role >= targetLevel
+    AnonymizationService ..> Report : anonymizes sensitive data
+    AccessControlService ..> Report : checks role permissions
     NotificationService ..> Notification : creates and sends
 ```
 
@@ -470,13 +474,18 @@ We use **Git** with **GitHub** for version control and collaboration.
 
 The following table explains why each technology in our stack was chosen over common alternatives, specifically in the context of a school harassment reporting application.
 
+
 | Technology | Role | Why we chose it | Alternative considered |
 |------------|------|-----------------|------------------------|
-| **Flutter** | Mobile app (students) | Single codebase for iOS and Android — critical for reaching students on any device without maintaining two apps. Rich UI components and fast rendering. | React Native — rejected because Flutter has better performance and a more consistent cross-platform UI. |
-| **Next.js** | Web admin dashboard (staff) | Server-Side Rendering (SSR) makes data-heavy admin pages faster to load. Built-in routing simplifies the project structure. Same JavaScript ecosystem as the backend. | Plain React — rejected because SSR improves initial load time for large report lists. |
-| **Node.js** | Backend API | JavaScript on both frontend (Next.js) and backend reduces context-switching and allows code sharing (types, validation schemas). Non-blocking I/O handles concurrent report submissions efficiently. | Django (Python) — considered but rejected to keep the stack in one language. |
-| **Prisma** | ORM (database access) | Type-safe queries catch errors at compile time rather than at runtime — important for a sensitive app handling personal data. Schema migrations are simple and versioned. | Sequelize — rejected because Prisma has better TypeScript support and a cleaner developer experience. |
-| **PostgreSQL** | Database | Relational model fits our data perfectly: users, reports, and follow-ups have clear relationships. ACID compliance guarantees data integrity for sensitive incident records. | MongoDB — rejected because our data is structured and relational; a document database would add unnecessary complexity. |
+| **Flutter** | Main application (students and staff) | Single codebase for Android, iOS, and other supported platforms. This reduces development time while providing a consistent UI and high performance across devices. | React Native — rejected because Flutter offers better rendering performance and more consistent cross-platform design. |
+| **Next.js** | Backend API server | Used as the backend layer through API routes and server-side features. Provides a structured architecture, easy API development, and seamless integration with the JavaScript/TypeScript ecosystem. | Express.js — rejected because Next.js provides a more integrated full-stack architecture with built-in routing and server capabilities. |
+| **Node.js** | Runtime environment | Handles asynchronous operations efficiently, which is useful for concurrent report submissions, authentication, and notifications. Using JavaScript/TypeScript across the stack simplifies development. | Django (Python) — considered but rejected to keep a unified JavaScript/TypeScript stack. |
+| **Prisma** | ORM (database access) | Type-safe database queries reduce runtime errors and improve maintainability. Prisma also simplifies schema migrations and database management. | Sequelize — rejected because Prisma offers better TypeScript support and a cleaner developer experience. |
+| **PostgreSQL** | Database | Relational data structures fit the application's needs well: users, reports, follow-ups, and notifications all have strong relationships. ACID compliance ensures reliable and secure data handling. | MongoDB — rejected because the project relies heavily on relational and structured data. |
+| **Firebase Cloud Messaging (FCM)** | Push notifications | Enables real-time notifications to inform users when a report status changes or receives a follow-up. Reliable cross-platform notification delivery. | OneSignal — rejected because FCM integrates more naturally with Firebase services and Flutter. |
+
+
+
 
 **Key design decisions:**
 
