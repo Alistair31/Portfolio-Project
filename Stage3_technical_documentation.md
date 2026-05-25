@@ -370,10 +370,10 @@ sequenceDiagram
 
 ### External APIs Used
 
-| API | Purpose | Why chosen |
-|-----|---------|------------|
-| Firebase Cloud Messaging (FCM) | Push notifications to students when their report status changes | Free, cross-platform (Flutter + web), easy to integrate |
-| (Optional future) SendGrid | Email notifications for report updates | Useful to reach users who disabled push notifications |
+| API                            | Purpose                                                       | Why chosen                                            |
+|--------------------------------|---------------------------------------------------------------|-------------------------------------------------------|
+| Firebase Cloud Messaging (FCM) | Push notifications to students when their report status changes | Free, cross-platform, easy to integrate with Flutter |
+| (Optional future) SendGrid     | Email notifications for report updates                        | Useful to reach users who disabled push notifications |
 
 ---
 
@@ -448,7 +448,8 @@ We use **Git** with **GitHub** for version control and collaboration.
 | Manual tests | **Postman / Insomnia** | Full user flows: login → report → admin follow-up |
 
 **Code quality:**
-- **ESLint + Prettier** on the Node.js/Next.js side to enforce consistent formatting.
+
+- **ESLint + Prettier** on the Node.js side to enforce consistent formatting.
 - **Dart analyzer** on the Flutter side for static analysis.
 - Pull Request reviews before any merge into `main`.
 
@@ -491,7 +492,7 @@ The following table explains why each technology in our stack was chosen over co
 
 - **Anonymity levels** (`NONE / NAME_HIDDEN / NAME_AND_CLASS_HIDDEN / FULLY_ANONYMOUS`) are processed server-side before storage, not client-side, to prevent users from bypassing anonymization by modifying the request.
 - **JWT** is used for authentication to keep the backend stateless and scalable, with the admin role encoded directly in the token payload.
-- **Separate apps** (Flutter for students, Next.js for staff) rather than one universal app — this enforces a clear separation of roles and reduces the attack surface for the admin interface.
+- **A single Flutter app** handles both student and staff interfaces, with role-based access control enforcing a clear separation of features and reducing the attack surface of the admin interface.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
