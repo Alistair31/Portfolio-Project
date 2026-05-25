@@ -27,7 +27,7 @@
 
 <h2 id="user-stories">User Stories</h2>
 
-The user stories is there to briefly describe how an user will interact with the application.  
+The user stories are there to briefly describe how a user will interact with the application.  
 This can be separated in four categories following the MoSCoW method (Must have, Should have, Could have, Won’t have).  
 <br>
 
@@ -38,40 +38,39 @@ This section represent mandatory feature for the MVP:
   <li>As a user, I want to be able to log in or out safely with my account.</li>
   <li>As a user, I want to access to the main feature easily.</li>
   <li>As a user, I want to post a testimony.</li>
-  <li>As a user, I want to follow the post i have made.</li>
-  <li>As a admin/staff, I want to retrieve testimonies for investigation.</li>
-  <li>As a admin/staff, I want to access to a dashboard for data synthesis.</li>
-  <li>As a admin/staff, I want to have access to all follow up.</li>
+  <li>As a user, I want to follow the post I have made.</li>
+  <li>As an admin/staff, I want to retrieve testimonies for investigation.</li>
+  <li>As an admin/staff, I want to access to a dashboard for data synthesis.</li>
+  <li>As an admin/staff, I want to have access to all follow up.</li>
 </ul>
 
 <h3><strong>Should have</strong></h3>  
 
 <ul>
   <li>As a user, I want to post a testimony as a witness.</li>
-  <li>As a admin/staff, I want to have statistics on harassment.</li>
+  <li>As an admin/staff, I want to have statistics on harassment.</li>
 </ul>
 
 <h3><strong>Could have</strong></h3>  
 
 <ul>
-  <li> As an user, I want to have a little box for news or agenda recall</li>
+  <li>As a user, I want to have a little box for news or agenda recall</li>
 </ul>
 
-<h3><strong>Won’t have</strong></h3>  
-  <li>As a user, I want to use a AI chatbot for helping me .</li>
+<h3><strong>Won’t have</strong></h3>
 <ul>
-  
+  <li>As a user, I want to use an AI chatbot for helping me.</li>
 </ul>
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <h2 id="mockups">Mockups</h2>
 
-Here is a basic render of every pages of the future app.
+Here is a basic render of every page of the future app.
 
 <ul>
   <li>MVP: Login page: A simple login page with the logo on top</li>
   <li>MVP: Register Page: A normal register page with an addition of the class to refer </li>
-  <li>MVP: Home Page (User): A home page for students with an acces to the report page and the follwo up of their own report</li>
+  <li>MVP: Home Page (User): A home page for students with an access to the report page and the follow up of their own report</li>
   <li>MVP: Home Page (Admin): A home page for staff members. It give access to tracker, dashboard and a box on the top where the most recent and most urgent report will be display.</li>
   <li>MVP: Report Page (User): A page where students could report an issue. It is composed of preset, the type of issue, the report itself and legal information (if needed).</li>
   <li>MVP: Tracker (Admin): A page where staff members could retrieve any report organised by filter, with a box on top for urgent report.</li>
@@ -91,9 +90,19 @@ Here is a basic render of every pages of the future app.
   title="Mockup Figma">
 </iframe>
 
+> [Open mockups in Figma](https://www.figma.com/design/QVPO9YaJcaw3oD79mIXDn0/Haven?node-id=38-151&m=dev&t=abJ5ukLg5PqKKDMN-1)
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<h2 id="architecture">Architecture</h2>  
+<h2 id="architecture">Architecture</h2>
+
+The application follows a client-server architecture with two separate frontends sharing a single backend API.
+
+- **Flutter** (mobile) is used by students to submit reports and track their status.
+- **Next.js** (web) is the admin dashboard used by staff members.
+- Both frontends communicate with a **Node.js REST API**, which handles authentication, business logic, and anonymization.
+- **Prisma** acts as the ORM between the API and the **PostgreSQL** database.
+- **Firebase Cloud Messaging (FCM)** is used to push notifications to students when their report status changes.
 
 ![Architecture Diagram](images/arch.svg)
 
@@ -105,12 +114,15 @@ Here is a basic render of every pages of the future app.
 |Components            |Type|Description                                                                         |
 |:---------------------|:---|:-----------------------------------------------------------------------------------|
 |Login                 |Page|Users can login if they have credentials                                            |
+|Register              |Page|New users can create an account and specify their class                             |
 |Home (User)           |Page|For students logged, access to features and follow up status (if any)               |
 |Home (Admin)          |Page|For staff members logged, access to specific features and last report(or urgent one)|
 |Report (User)         |Page|Students can post a report on incident they have been a victim or a witness         |
 |Counter report (Admin)|Page|Staff members can post a follow up of the incident                                  |
 |Issues tracker (User) |Page|Complete follow up of their own report                                              |
-||||
+|Tracker (Admin)       |Page|Staff members can browse all reports, filter by status/type and spot urgent ones    |
+|Dashboard             |Page|Summarises key data for staff members and links to other admin pages                |
+|Statistics            |Page|Displays statistics on report types and characteristics                             |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -153,7 +165,7 @@ sequenceDiagram
     User->>App: Submits report
     App->>API: POST /reports + anonymity level
     API->>Anonymization: Process report payload
-    Anonymization->>Anonymization: Apply anonymity level (1 / 2 / 3)
+    Anonymization->>Anonymization: Apply anonymity level (1 / 2 / 3 / 4)
     Anonymization-->>API: Anonymized report
     API->>Database: Store report via Prisma
     Database-->>API: Report saved + report id
@@ -219,13 +231,123 @@ sequenceDiagram
 
 <h2 id="api-specifications">API Specifications</h2>
 
+### External APIs Used
+
+| API | Purpose | Why chosen |
+|-----|---------|------------|
+| Firebase Cloud Messaging (FCM) | Push notifications to students when their report status changes | Free, cross-platform (Flutter + web), easy to integrate |
+| (Optional future) SendGrid | Email notifications for report updates | Useful to reach users who disabled push notifications |
+
+---
+
+### Internal API Endpoints (MVP)
+
+#### Authentication
+
+| Method | Endpoint | Description | Input (JSON) | Output (JSON) |
+|--------|----------|-------------|--------------|---------------|
+| **POST** | `/auth/register` | Register a new user | `{ "email": "string", "password": "string", "name": "string", "class": "string" }` | `{ "id": "uuid", "email": "string", "name": "string" }` |
+| **POST** | `/auth/login` | Log in and receive JWT | `{ "email": "string", "password": "string" }` | `{ "accessToken": "jwt_token" }` |
+| **POST** | `/auth/logout` | Invalidate session | Header: `Authorization: Bearer <token>` | `{ "message": "Logged out" }` |
+
+---
+
+#### Reports (User)
+
+| Method | Endpoint | Description | Input | Output |
+|--------|----------|-------------|-------|--------|
+| **POST** | `/reports` | Submit a new incident report | `{ "type": "string", "gravity": 1-3, "description": "string", "anonymityLevel": 1-4 }` | `{ "id": "uuid", "status": "pending", "createdAt": "datetime" }` |
+| **GET** | `/tracker/me` | Get the logged-in student's own reports | Header: `Authorization: Bearer <token>` | `[ { "id": "uuid", "type": "string", "status": "string", "updatedAt": "datetime" } ]` |
+
+---
+
+#### Reports (Admin)
+
+| Method | Endpoint | Description | Input | Output |
+|--------|----------|-------------|-------|--------|
+| **GET** | `/admin/reports` | Get all reports (filterable) | JWT (admin role) + Query: `?status=pending&type=harassment` | `[ { "id": "uuid", "type": "string", "gravity": 1-3, "status": "string", "createdAt": "datetime" } ]` |
+| **GET** | `/admin/reports/:id` | Get full details of one report | Path param: `id` | `{ "id": "uuid", "type": "string", "description": "string", "gravity": 1-3, "status": "string", "followUp": "string\|null" }` |
+| **PATCH** | `/admin/reports/:id` | Add follow-up notes and update status | `{ "notes": "string", "status": "in_progress\|closed" }` | `{ "id": "uuid", "status": "string", "updatedAt": "datetime" }` |
+
+---
+
+> **Note:** All endpoints return errors in the format `{ "error": "message" }`. Protected routes require a valid JWT in the `Authorization: Bearer <token>` header. Admin routes additionally verify the `admin` role encoded in the token.
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <h2 id="scm-and-qa-plans">SCM and QA Plans</h2>
 
+### Source Control Management (SCM)
+
+We use **Git** with **GitHub** for version control and collaboration.
+
+**Branching strategy:**
+
+- `main` → always contains stable, production-ready code. Only merged into when `dev` is clean and fully functional.
+- `dev` → integration branch. Personal branches are merged here first for testing before going to `main`.
+- `Gabriel` / `Jarod` → personal development branches. Each team member works on their own branch.
+
+**Workflow:**
+
+1. Work on your personal branch (`Gabriel` or `Jarod`).
+2. Commit regularly with clear messages (e.g. `feat: add report submission endpoint`).
+3. Open a Pull Request from personal branch → `dev`.
+4. Code review by the other team member.
+5. Once `dev` is stable and all features work together → merge `dev` → `main`.
+
+---
+
+### QA (Quality Assurance)
+
+**Testing strategy:**
+
+| Type | Tool | What it covers |
+|------|------|----------------|
+| Unit tests | **Jest** | Individual backend service functions (e.g. anonymization logic, token validation) |
+| API tests | **Jest + Supertest** | HTTP endpoints: auth, report submission, admin routes |
+| Mobile UI tests | **Flutter widget tests** | Key screens: login form, report form, tracker view |
+| Manual tests | **Postman / Insomnia** | Full user flows: login → report → admin follow-up |
+
+**Code quality:**
+- **ESLint + Prettier** on the Node.js/Next.js side to enforce consistent formatting.
+- **Dart analyzer** on the Flutter side for static analysis.
+- Pull Request reviews before any merge into `main`.
+
+---
+
+### Deployment Pipeline
+
+| Environment | Purpose | Details |
+|-------------|---------|---------|
+| **Development** | Local machines | Each developer runs the stack locally with a local PostgreSQL instance |
+| **Staging** (optional) | Pre-production testing | Mirror of production with test data; used to validate full flows before release |
+| **Production** (future) | Live school deployment | Real server, real database, notifications enabled |
+
+**CI steps (planned):**
+1. Push to a branch → GitHub Actions triggers automatically.
+2. Run `jest` test suite.
+3. Run linter checks.
+4. If all pass → branch is safe to merge into `main`.
+
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <h2 id="technical-justifications">Technical Justifications</h2>
+
+The following table explains why each technology in our stack was chosen over common alternatives, specifically in the context of a school harassment reporting application.
+
+| Technology | Role | Why we chose it | Alternative considered |
+|------------|------|-----------------|------------------------|
+| **Flutter** | Mobile app (students) | Single codebase for iOS and Android — critical for reaching students on any device without maintaining two apps. Rich UI components and fast rendering. | React Native — rejected because Flutter has better performance and a more consistent cross-platform UI. |
+| **Next.js** | Web admin dashboard (staff) | Server-Side Rendering (SSR) makes data-heavy admin pages faster to load. Built-in routing simplifies the project structure. Same JavaScript ecosystem as the backend. | Plain React — rejected because SSR improves initial load time for large report lists. |
+| **Node.js** | Backend API | JavaScript on both frontend (Next.js) and backend reduces context-switching and allows code sharing (types, validation schemas). Non-blocking I/O handles concurrent report submissions efficiently. | Django (Python) — considered but rejected to keep the stack in one language. |
+| **Prisma** | ORM (database access) | Type-safe queries catch errors at compile time rather than at runtime — important for a sensitive app handling personal data. Schema migrations are simple and versioned. | Sequelize — rejected because Prisma has better TypeScript support and a cleaner developer experience. |
+| **PostgreSQL** | Database | Relational model fits our data perfectly: users, reports, and follow-ups have clear relationships. ACID compliance guarantees data integrity for sensitive incident records. | MongoDB — rejected because our data is structured and relational; a document database would add unnecessary complexity. |
+
+**Key design decisions:**
+
+- **Anonymity levels (1/2/3/4)** are processed server-side before storage, not client-side, to prevent users from bypassing anonymization by modifying the request.
+- **JWT** is used for authentication to keep the backend stateless and scalable, with the admin role encoded directly in the token payload.
+- **Separate apps** (Flutter for students, Next.js for staff) rather than one universal app — this enforces a clear separation of roles and reduces the attack surface for the admin interface.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
