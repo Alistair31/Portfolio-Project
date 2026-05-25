@@ -104,7 +104,7 @@ The application follows a client-server architecture with two separate frontends
 - **Prisma** acts as the ORM between the API and the **PostgreSQL** database.
 - **Firebase Cloud Messaging (FCM)** is used to push notifications to students when their report status changes.
 
-![Architecture Diagram](https://raw.githubusercontent.com/Alistair31/Portfolio-Project/Gabriel/images/arch.svg)
+![Architecture Diagram](https://raw.githubusercontent.com/Alistair31/Portfolio-Project/Gabriel/Images/arch.svg)
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
