@@ -10,8 +10,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  bool _isDotCenter = false;
   bool _isScalTheCircle = false;
+  bool _isAtCenter = false;
 
   @override
   void initState() {
@@ -23,7 +23,7 @@ class _SplashScreenState extends State<SplashScreen> {
     Future.delayed(Duration(milliseconds: 300), () {
       if (!mounted) return;
       setState(() {
-        _isDotCenter = true;
+        _isAtCenter = true;
       });
       Future.delayed(Duration(milliseconds: 520), () {
         if (!mounted) return;
@@ -54,6 +54,9 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       backgroundColor: Color.fromARGB(255, 48, 214, 120),
       body: SizedBox(
@@ -64,7 +67,7 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             Center(
               child: AnimatedScale(
-                duration: Duration(milliseconds: 600),
+                duration: Duration(milliseconds: 1800),
                 curve: Cubic(0.58, -0.30, 0.365, 1),
                 scale: _isScalTheCircle ? 10 : 1,
                 child: CircleAvatar(
@@ -81,17 +84,77 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ),
             ),
-            AnimatedPositioned(
-              duration: Duration(milliseconds: 500),
-              curve: Cubic(.47, -1.26, .36, 1),
-              left: (MediaQuery.of(context).size.width / 2) -
-                  12 -
-                  (_isDotCenter ? 0 : 80),
-              child: CircleAvatar(radius: 12, backgroundColor: Colors.white),
+            TweenAnimationBuilder<Offset>(
+              tween: Tween<Offset>(
+                begin: Offset(40, 40),
+                end: _isAtCenter
+                    ? Offset(screenWidth / 2 - 12, screenHeight / 2 - 12)
+                    : Offset(40, 40),
+              ),
+              duration: Duration(milliseconds: 1500),
+              curve: Cubic(.47, 0, .36, 1),
+              builder: (context, offset, child) {
+                return Stack(
+                  children: [
+                    CustomPaint(
+                      painter: Rope(
+                        start: Offset(0, 0),
+                        end: offset,
+                        color: const Color.fromARGB(221, 211, 122, 20),
+                      ),
+                      size: Size(screenWidth, screenHeight),
+                    ),
+                    Positioned(
+                      top: offset.dy -12,
+                      left: offset.dx -12,
+                      child: Icon(
+                        Icons.anchor,
+                        color: Color(0xFF424242),  // gris foncé
+                        size: 48,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
           ],
         ),
       ),
     );
   }
+}
+
+class Rope extends CustomPainter {
+  final Offset start;
+  final Offset end;
+  final Color color;
+
+  Rope({required this.start, required this.end, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 6
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+
+    final mid = Offset(
+      (start.dx + end.dx) / 2 + 80,  // tire vers la droite
+      (start.dy + end.dy) / 2 + 80,  // tire vers le bas
+    );
+
+
+    final path = Path()
+      ..moveTo(start.dx, start.dy)
+      ..quadraticBezierTo(mid.dx, mid.dy, end.dx, end.dy);
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(Rope oldDelegate) =>
+    oldDelegate.start != start || oldDelegate.end != end || oldDelegate.color != color;
+
 }
