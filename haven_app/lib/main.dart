@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Haven',
       debugShowCheckedModeBanner: false,
-      home: SplashScreen(),
+
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.white,
@@ -22,6 +22,7 @@ class MyApp extends StatelessWidget {
           brightness: Brightness.dark,
           ),
       ),
+      home: const SplashScreen(),
     );
   }
 }
