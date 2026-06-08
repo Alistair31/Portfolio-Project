@@ -89,7 +89,7 @@ class _SplashScreenState extends State<SplashScreen> {
               tween: Tween<Offset>(
                 begin: Offset(40, 40),
                 end: _isAtCenter
-                    ? Offset(screenWidth / 2 - 12, screenHeight / 2 - 12)
+                    ? Offset(screenWidth / 2, screenHeight / 2)
                     : Offset(40, 40),
               ),
               duration: Duration(milliseconds: 1500),
@@ -106,8 +106,8 @@ class _SplashScreenState extends State<SplashScreen> {
                       size: Size(screenWidth, screenHeight),
                     ),
                     Positioned(
-                      top: offset.dy -12,
-                      left: offset.dx -12,
+                      top: offset.dy -24,
+                      left: offset.dx -24,
                       child: Icon(
                         Icons.anchor,
                         color: Color(0xFF424242),  // gris foncé
