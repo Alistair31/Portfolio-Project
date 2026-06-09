@@ -10,6 +10,7 @@ export async function POST(request: Request) {
     password: z.string().min(6).max(100),
     name: z.string().min(2).max(50),
     className: z.string().min(1).max(50),
+    schoolCode: z.string().min(1).max(50),
   })
 
   const result = schema.safeParse(body)
@@ -20,14 +21,14 @@ export async function POST(request: Request) {
     })
   }
 
-  const { email, password, name, className } = result.data
+  const { email, password, name, className, schoolCode } = result.data
 
   try {
     const existingUser = await db.user.findUnique({ where: { email } })
     if (!existingUser) {
       const hashedPassword = await bcrypt.hash(password, 10)
       await db.user.create({
-        data: { email, passwordHash: hashedPassword, name, className, role: "STUDENT" },
+        data: { email, passwordHash: hashedPassword, name, className, schoolCode, role: "STUDENT" },
       })
     }
     return new Response(
