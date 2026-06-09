@@ -29,4 +29,10 @@ class AppColors {
 
   /// Boutons secondaires (contour).
   static const Color outlineBorder = Color(0xFFE6E6DF);
+
+  /// Bandeau d'information (fond vert clair + texte vert foncé).
+  static const Color infoBackground = Color(0xFFD7F0DE);
+  static const Color infoText = Color(0xFF2A6B45);
+
+  static const Color backgroundBottomBlack = Color.fromARGB(255, 0, 0, 0);
 }
