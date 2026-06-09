@@ -8,6 +8,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -44,6 +45,7 @@ model User {
   passwordHash String
   name         String
   className    String
+  schoolCode   String
   role         Role
   fcmToken     String?
   createdAt    DateTime @default(now())
