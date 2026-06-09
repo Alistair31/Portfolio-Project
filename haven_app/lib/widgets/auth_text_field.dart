@@ -6,7 +6,7 @@ import '../theme/app_colors.dart';
 /// Sert aussi bien pour le code établissement que le mot de passe.
 class AuthTextField extends StatelessWidget {
   final String label;
-  final IconData icon;
+  final IconData? icon;
   final String? hintText;
   final bool obscureText;
   final TextEditingController? controller;
@@ -16,7 +16,7 @@ class AuthTextField extends StatelessWidget {
   const AuthTextField({
     super.key,
     required this.label,
-    required this.icon,
+    this.icon,
     this.hintText,
     this.obscureText = false,
     this.controller,
@@ -69,7 +69,9 @@ class AuthTextField extends StatelessWidget {
                 color: AppColors.iconMuted,
                 fontWeight: FontWeight.w500,
               ),
-              prefixIcon: Icon(icon, color: AppColors.iconMuted, size: 20),
+              prefixIcon: icon == null
+                  ? null
+                  : Icon(icon, color: AppColors.iconMuted, size: 20),
               suffixIcon: suffix,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(

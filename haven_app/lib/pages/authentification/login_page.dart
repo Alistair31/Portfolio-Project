@@ -6,6 +6,7 @@ import '../../widgets/haven_logo.dart';
 import '../../widgets/or_divider.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/secondary_button.dart';
+import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -72,10 +73,10 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const Spacer(flex: 4),
                           AuthTextField(
-                            label: 'Code établissement',
-                            icon: Icons.shield_outlined,
-                            hintText: 'Ex : LSJ-31',
-                            keyboardType: TextInputType.text,
+                            label: 'Email',
+                            icon: Icons.mail_outline,
+                            hintText: 'Ex : contact@havenlabs.fr',
+                            keyboardType: TextInputType.emailAddress,
                           ),
                           const SizedBox(height: 18),
                           AuthTextField(
@@ -139,7 +140,11 @@ class _LoginPageState extends State<LoginPage> {
             WidgetSpan(
               alignment: PlaceholderAlignment.middle,
               child: GestureDetector(
-                onTap: () {},
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (context) =>  RegisterPage()),
+                  );
+                },
                 child: const Text(
                   'Crée ton accès',
                   style: TextStyle(

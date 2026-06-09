@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../login/login_page.dart';
+import '../authentification/login_page.dart';
 
 class HavenScreen extends StatefulWidget {
   const HavenScreen({super.key});
