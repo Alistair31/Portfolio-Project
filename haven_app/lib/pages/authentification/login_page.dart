@@ -71,6 +71,7 @@ class _LoginPageState extends State<LoginPage> {
                               color: AppColors.textMuted,
                             ),
                           ),
+                          const SizedBox(height: 28),
                           AuthTextField(
                             label: 'Email',
                             icon: Icons.mail_outline,
