@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -12,8 +10,86 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  STUDENT
+  TEACHER
+  DIRECTOR_CPE
+  RECTORAT
+}
+
+enum ReportType {
+  PHYSICAL
+  VERBAL
+  SEXUAL
+  CYBER
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  IN_PROGRESS
+  CLOSED
+}
+
+enum AnonymityLevel {
+  NONE
+  NAME_HIDDEN
+  NAME_AND_CLASS_HIDDEN
+  FULLY_ANONYMOUS
+}
+
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  className    String
+  role         Role
+  fcmToken     String?
+  createdAt    DateTime @default(now())
+
+  reports       Report[]
+  followUps     FollowUp[]
+  notifications Notification[]
+}
+
+model Report {
+  id             String         @id @default(cuid())
+  type           ReportType
+  gravity        Int
+  description    String
+  targetLevel    Role
+  anonymityLevel AnonymityLevel
+  status         ReportStatus   @default(PENDING)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  authorId       String
+
+  author        User           @relation(fields: [authorId], references: [id])
+  followUps     FollowUp[]
+  notifications Notification[]
+}
+
+model FollowUp {
+  id        String       @id @default(cuid())
+  notes     String
+  newStatus ReportStatus
+  createdAt DateTime     @default(now())
+  reportId  String
+  staffId   String
+
+  report Report @relation(fields: [reportId], references: [id])
+  staff  User   @relation(fields: [staffId], references: [id])
+}
+
+model Notification {
+  id       String   @id @default(cuid())
+  message  String
+  read     Boolean  @default(false)
+  sentAt   DateTime @default(now())
+  userId   String
+  reportId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  report Report @relation(fields: [reportId], references: [id])
 }
