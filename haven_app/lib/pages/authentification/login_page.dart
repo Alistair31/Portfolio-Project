@@ -6,6 +6,7 @@ import '../../widgets/haven_logo.dart';
 import '../../widgets/or_divider.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/secondary_button.dart';
+import '../../services/api_service.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -17,10 +18,54 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
+  }
+
+  void _handleLogin() async {
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
+    try {
+      final response = await ApiService().login(email, password);
+      
+      switch (response.user.role) {
+
+        case 'STUDENT':
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const Placeholder()),
+          );
+        case 'TEACHER':
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const Placeholder()),
+          );
+        case 'DIRECTOR_CPE':
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const Placeholder()),
+          );
+        case 'RECTORAT':
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const Placeholder()),
+          );
+        default:
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Rôle inconnu')),
+          );
+      }
+    }
+
+    catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
+
   }
 
   @override
@@ -73,14 +118,14 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           const SizedBox(height: 28),
                           AuthTextField(
-                            label: 'Email',
+                            label: 'Email', controller: _emailController,
                             icon: Icons.mail_outline,
                             hintText: 'Ex : contact@havenlabs.fr',
                             keyboardType: TextInputType.emailAddress,
                           ),
                           const SizedBox(height: 18),
                           AuthTextField(
-                            label: 'Mot de passe',
+                            label: 'Mot de passe', controller: _passwordController,
                             icon: Icons.lock_outline,
                             obscureText: _obscurePassword,
                             hintText: 'Ex: Haven@2026',
@@ -97,11 +142,11 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                           ),
-                          const Spacer(flex: 4),
+                          const SizedBox(height: 28),
                           PrimaryButton(
                             label: 'Se connecter',
                             trailingIcon: Icons.arrow_forward,
-                            onPressed: () {},
+                            onPressed: _handleLogin,
                           ),
                           const SizedBox(height: 18),
                           _buildSignUpRow(),
