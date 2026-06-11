@@ -15,7 +15,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
-
+  bool _checkbox = false;
   @override
   void dispose() {
     super.dispose();
@@ -94,6 +94,28 @@ class _LoginPageState extends State<LoginPage> {
                                 () => _obscurePassword = !_obscurePassword,
                               ),
                             ),
+                          ),
+                          //Rester connecté 
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Checkbox(
+                                value: _checkbox,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _checkbox = value ?? false;
+                                  });
+                                },
+                                activeColor: AppColors.textGreen,
+                              ),
+                              const Text(
+                                'Rester connecté',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ],
                           ),
                           const Spacer(flex: 4),
                           PrimaryButton(
