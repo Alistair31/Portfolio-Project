@@ -106,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
                                     _checkbox = value ?? false;
                                   });
                                 },
-                                activeColor: AppColors.textGreen,
+                                activeColor: AppColors.buttonGreen,
                               ),
                               const Text(
                                 'Rester connecté',
