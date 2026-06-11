@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     )
 
     return new Response(
-      JSON.stringify({ token, user: { id: user.id, name: user.name } }),
+      JSON.stringify({ token, user: { id: user.id, name: user.name, role: user.role } }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     )
   } catch (error) {
