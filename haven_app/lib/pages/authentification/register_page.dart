@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/auth_text_field.dart';
 import '../../widgets/primary_button.dart';
+import '../onboarding/onboarding_page.dart';
 
 
 class RegisterPage extends StatefulWidget {
@@ -107,7 +108,15 @@ class _RegisterPageState extends State<RegisterPage> {
                 PrimaryButton(
                   label: 'Créer mon accès',
                   trailingIcon: Icons.arrow_forward,
-                  onPressed: () {},
+                  // TODO: brancher la vraie validation/création de compte.
+                  // Une fois l'inscription réussie, on lance l'onboarding.
+                  onPressed: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (_) => const OnboardingFlow(),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

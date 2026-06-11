@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/auth_text_field.dart';
 import '../../widgets/haven_logo.dart';
-import '../../widgets/or_divider.dart';
 import '../../widgets/primary_button.dart';
-import '../../widgets/secondary_button.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
