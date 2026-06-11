@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'package:haven_app/pages/authentification/login_page.dart';
+import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/auth_text_field.dart';
 import '../../widgets/primary_button.dart';
@@ -14,11 +15,39 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   bool _obscurePassword = true;
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _schoolCodeController = TextEditingController();
+  final TextEditingController _classNameController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _schoolCodeController.dispose();
+    _classNameController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
+  
+  void _handleRegister() async {
+    final email = _emailController.text;
+    final password = _passwordController.text;
+    final name = _nameController.text;
+    final className = _classNameController.text;
+    final schoolCode = _schoolCodeController.text;
+
+    try {
+      final response = await ApiService().register(email, password, name, className, schoolCode);
+
+      Navigator.of(context).pop();
+    }
+    catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+      }
+    }
 
   @override
   Widget build(BuildContext context) {
@@ -49,12 +78,14 @@ class _RegisterPageState extends State<RegisterPage> {
                           label: 'Prénom',
                           icon: Icons.person_outline,
                           hintText: "Comme tu veux qu'on t'appelle",
+                          controller: _nameController,
                         ),
                         const SizedBox(height: 20),
                         AuthTextField(
                           label: 'Email',
                           icon: Icons.mail_outline,
-                          hintText: 'Ex : contact@havenlabs.fr'
+                          hintText: 'Ex : contact@havenlabs.fr',
+                          controller: _emailController,
                         ),
                         const SizedBox(height: 20),
                         Row(
@@ -66,6 +97,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                 label: 'Code établissement',
                                 icon: Icons.shield_outlined,
                                 hintText: 'Ex : LSJ-31',
+                                controller: _schoolCodeController,
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -74,6 +106,7 @@ class _RegisterPageState extends State<RegisterPage> {
                               child: AuthTextField(
                                 label: 'Classe',
                                 hintText: 'Ex : 4e B',
+                                controller: _classNameController,
                               ),
                             ),
                           ],
@@ -84,6 +117,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           icon: Icons.lock_outline,
                           hintText: '8 caractères minimum',
                           obscureText: _obscurePassword,
+                          controller: _passwordController,
                           suffix: IconButton(
                             icon: Icon(
                               _obscurePassword
@@ -107,7 +141,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 PrimaryButton(
                   label: 'Créer mon accès',
                   trailingIcon: Icons.arrow_forward,
-                  onPressed: () {},
+                  onPressed: _handleRegister,
                 ),
               ],
             ),
