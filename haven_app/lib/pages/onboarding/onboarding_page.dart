@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import '../../services/preferences.dart';
 import '../../theme/app_colors.dart';
 import '../home/home_page.dart';
 import 'onboarding_clair.dart';
@@ -39,7 +39,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     }
   }
 
-  void _finish() {
+  Future<void> _finish() async {
+    await PreferencesService().setOnboardingSeen();
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const HomePage()),
     );
@@ -47,7 +48,9 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
       backgroundColor: AppColors.backgroundBottom,
       body: Stack(
         children: [
@@ -76,6 +79,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
