@@ -35,4 +35,13 @@ class AppColors {
   static const Color infoText = Color(0xFF2A6B45);
 
   static const Color backgroundBottomBlack = Color.fromARGB(255, 0, 0, 0);
+
+  /// Onboarding — grand bloc vert plein (variante « Lueur »).
+  static const Color cardGreen = Color(0xFF8DE0A3);
+
+  /// Onboarding — surlignage « marqueur » derrière un mot (variante « Clair »).
+  static const Color highlightGreen = Color(0xFF8DE0A3);
+
+  /// Bouton plein foncé (variantes « Clair » & « Lueur »).
+  static const Color buttonDark = Color(0xFF16181C);
 }

@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/auth_text_field.dart';
 import '../../widgets/haven_logo.dart';
-import '../../widgets/or_divider.dart';
 import '../../widgets/primary_button.dart';
-import '../../widgets/secondary_button.dart';
 import '../../services/api_service.dart';
 import 'register_page.dart';
 
@@ -18,6 +16,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
+  bool _checkbox = false;
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -142,7 +141,29 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 28),
+                          //Rester connecté 
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Checkbox(
+                                value: _checkbox,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _checkbox = value ?? false;
+                                  });
+                                },
+                                activeColor: AppColors.buttonGreen,
+                              ),
+                              const Text(
+                                'Rester connecté',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Spacer(flex: 4),
                           PrimaryButton(
                             label: 'Se connecter',
                             trailingIcon: Icons.arrow_forward,

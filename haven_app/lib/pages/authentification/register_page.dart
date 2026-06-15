@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/auth_text_field.dart';
 import '../../widgets/primary_button.dart';
+import '../onboarding/onboarding_page.dart';
 
 
 class RegisterPage extends StatefulWidget {
