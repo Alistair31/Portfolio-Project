@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'package:haven_app/services/preferences.dart';
+import '../../pages/onboarding/onboarding_page.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/auth_text_field.dart';
 import '../../widgets/haven_logo.dart';
@@ -33,29 +34,39 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final response = await ApiService().login(email, password);
-      
-      switch (response.user.role) {
 
-        case 'STUDENT':
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const Placeholder()),
-          );
-        case 'TEACHER':
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const Placeholder()),
-          );
-        case 'DIRECTOR_CPE':
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const Placeholder()),
-          );
-        case 'RECTORAT':
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const Placeholder()),
-          );
-        default:
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Rôle inconnu')),
-          );
+      if (_checkbox) {
+        await PreferencesService().saveToken(response.token);
+      }
+      final onboardWait = await PreferencesService().hasSeenOnboarding();
+
+      if (!onboardWait) {
+        Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const OnboardingFlow()));
+        } else {
+        switch (response.user.role) {
+
+          case 'STUDENT':
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const Placeholder()),
+            );
+          case 'TEACHER':
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const Placeholder()),
+            );
+          case 'DIRECTOR_CPE':
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const Placeholder()),
+            );
+          case 'RECTORAT':
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const Placeholder()),
+            );
+          default:
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Rôle inconnu')),
+            );
+        }
       }
     }
 
