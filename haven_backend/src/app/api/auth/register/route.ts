@@ -24,9 +24,10 @@ export async function POST(request: Request) {
   const { email, password, name, className, schoolCode } = result.data
 
   try {
+    // Always hash first to prevent timing-based email enumeration
+    const hashedPassword = await bcrypt.hash(password, 10)
     const existingUser = await db.user.findUnique({ where: { email } })
     if (!existingUser) {
-      const hashedPassword = await bcrypt.hash(password, 10)
       await db.user.create({
         data: { email, passwordHash: hashedPassword, name, className, schoolCode, role: "STUDENT" },
       })
