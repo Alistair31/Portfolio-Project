@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:haven_app/pages/home/home_page.dart';
 import 'package:haven_app/services/preferences.dart';
 import '../../pages/onboarding/onboarding_page.dart';
 import '../../theme/app_colors.dart';
@@ -48,7 +49,7 @@ class _LoginPageState extends State<LoginPage> {
 
           case 'STUDENT':
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const Placeholder()),
+              MaterialPageRoute(builder: (_) => const HomePage()),
             );
           case 'TEACHER':
             Navigator.of(context).pushReplacement(
