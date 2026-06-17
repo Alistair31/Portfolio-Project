@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-
 import '../../theme/app_colors.dart';
 import '../../widgets/haven_logo.dart';
+import '../../widgets/logout_button.dart';
 
 /// Écran d'accueil (placeholder) affiché une fois l'onboarding terminé.
 /// À remplacer par le vrai tableau de bord de l'app.
@@ -19,7 +19,7 @@ class HomePage extends StatelessWidget {
             colors: [AppColors.backgroundTop, AppColors.backgroundBottom],
           ),
         ),
-        child: const SafeArea(
+        child: SafeArea(
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -37,8 +37,11 @@ class HomePage extends StatelessWidget {
                 SizedBox(height: 8),
                 Text(
                   'Ton espace est prêt.',
-                  style: TextStyle(fontSize: 16, color: AppColors.textMuted),
+                  style: TextStyle(fontSize: 16,
+				  color: AppColors.textMuted),
                 ),
+                const SizedBox(height: 32),
+                const LogoutButton(),
               ],
             ),
           ),
