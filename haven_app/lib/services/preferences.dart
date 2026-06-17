@@ -26,4 +26,10 @@ class PreferencesService {
 
     return savTok.getString('token');
   }
+
+  Future<void> removeToken() async {
+    final byebye = await SharedPreferences.getInstance();
+
+    byebye.remove('token');
+  }
 }
