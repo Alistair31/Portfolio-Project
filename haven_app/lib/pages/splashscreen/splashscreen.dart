@@ -33,7 +33,7 @@ class _SplashScreenState extends State<SplashScreen> {
         });
         Future.delayed(Duration(milliseconds: 600), () {
           if (!mounted) return;
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             PageRouteBuilder(
               pageBuilder: (context, animation, secondaryAnimation) =>
