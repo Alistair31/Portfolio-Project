@@ -87,3 +87,8 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+.claude/settings.local.json
+.vscode/settings.json
+haven_backend/package-lock.json
+haven_backend/package.json
+haven_app/devtools_options.yaml
