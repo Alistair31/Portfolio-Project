@@ -131,7 +131,7 @@ class _LoginPageState extends State<LoginPage> {
                           AuthTextField(
                             label: 'Email', controller: _emailController,
                             icon: Icons.mail_outline,
-                            hintText: 'Ex : contact@havenlabs.fr',
+                            hintText: 'Ex : test@haven.fr',
                             keyboardType: TextInputType.emailAddress,
                           ),
                           const SizedBox(height: 18),
