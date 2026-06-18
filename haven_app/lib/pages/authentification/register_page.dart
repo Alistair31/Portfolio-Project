@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:haven_app/pages/authentification/login_page.dart';
 import '../../services/api_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/auth_text_field.dart';
 import '../../widgets/primary_button.dart';
-import '../onboarding/onboarding_page.dart';
+import '../legal/privacy_policy_page.dart';
 
 
 class RegisterPage extends StatefulWidget {
@@ -16,10 +15,19 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   bool _obscurePassword = true;
+  bool _privacyConsentCheckbox = false;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _schoolCodeController = TextEditingController();
-  final TextEditingController _classNameController = TextEditingController();
+  String? _selectedGrade;
+  static const List<String> _grades = [
+  '6e', '5e', '4e', '3e', '3e SEGPA',
+  '2nde', '2nde STI2D',
+  '1ère G', '1ère STI2D',
+  'T° G', 'T° STI2D',
+  'CAP', 'BAC Pro', 'BTS', 'CPGE',
+  ];
+  final TextEditingController _classSectionController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
   @override
@@ -27,7 +35,7 @@ class _RegisterPageState extends State<RegisterPage> {
     _nameController.dispose();
     _emailController.dispose();
     _schoolCodeController.dispose();
-    _classNameController.dispose();
+    _classSectionController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -36,20 +44,77 @@ class _RegisterPageState extends State<RegisterPage> {
     final email = _emailController.text;
     final password = _passwordController.text;
     final name = _nameController.text;
-    final className = _classNameController.text;
+    final className = _classSectionController.text;
     final schoolCode = _schoolCodeController.text;
 
-    try {
-      final response = await ApiService().register(email, password, name, className, schoolCode);
-
-      Navigator.of(context).pop();
-    }
-    catch (e) {
+    if (name.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+        SnackBar(content: Text("Prénom requis")));
+      return;
+    }
+    
+    if (email.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Email requis")));
+      return;
+    } else {
+      final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+      if (!emailRegex.hasMatch(email)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Format d'email invalide (ex : prenom@lycee.fr)")));
+        return;
       }
     }
 
+    if (schoolCode.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Code établissement requis")));
+      return;
+    }
+
+    if (className.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Classe requise")));
+      return;
+    }
+    
+    if (password.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Mot de passe requis")));
+      return;
+    }
+
+    if (_privacyConsentCheckbox) {
+      try {
+        final navigator = Navigator.of(context);
+        final response = await ApiService().register(email, password, name, className, schoolCode);
+
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Demande envoyée'),
+            content: Text(response),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+
+        if (mounted) navigator.pop();
+      }
+      catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+        }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Consentement aux regles d'utilisation requise")));
+    }
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -89,28 +154,89 @@ class _RegisterPageState extends State<RegisterPage> {
                           controller: _emailController,
                         ),
                         const SizedBox(height: 20),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 3,
-                              child: AuthTextField(
-                                label: 'Code établissement',
-                                icon: Icons.shield_outlined,
-                                hintText: 'Ex : LSJ-31',
-                                controller: _schoolCodeController,
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: AuthTextField(
+                                  label: 'Code établissement',
+                                  icon: Icons.shield_outlined,
+                                  hintText: 'Ex : LSJ-31',
+                                  controller: _schoolCodeController,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              flex: 2,
-                              child: AuthTextField(
-                                label: 'Classe',
-                                hintText: 'Ex : 4e B',
-                                controller: _classNameController,
+                              const SizedBox(width: 12),
+                              Expanded(
+                                flex: 2,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    const Text(
+                                      'Classe',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.label,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.fieldBackground,
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(color: AppColors.fieldBorder),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.03),
+                                              blurRadius: 12,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              flex: 3,
+                                              child: DropdownButtonFormField<String>(
+                                                dropdownColor: Colors.white,
+                                                isDense: false,
+                                                isExpanded: true,
+                                                decoration: const InputDecoration.collapsed(hintText: ''),
+                                                hint: const Text('Niveau', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                                                style: const TextStyle(fontSize: 13, color: AppColors.textDark),
+                                                value: _selectedGrade,
+                                                items: _grades.map((grade) => DropdownMenuItem(
+                                                  value: grade,
+                                                  child: Text(grade, style: const TextStyle(fontSize: 13, color: AppColors.textDark)),
+                                                )).toList(),
+                                                onChanged: (value) => setState(() => _selectedGrade = value),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Container(width: 1, color: AppColors.fieldBorder),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              flex: 1,
+                                              child: TextField(
+                                                controller: _classSectionController,
+                                                decoration: const InputDecoration.collapsed(hintText: 'A…'),
+                                                style: const TextStyle(fontSize: 13, color: AppColors.textDark),
+                                                textAlign: TextAlign.center,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 20),
                         AuthTextField(
@@ -131,6 +257,45 @@ class _RegisterPageState extends State<RegisterPage> {
                               () => _obscurePassword = !_obscurePassword,
                             ),
                           )
+                        ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Checkbox(
+                              value: _privacyConsentCheckbox,
+                              onChanged: (value) {
+                                setState(() {
+                                  _privacyConsentCheckbox = value ?? false;
+                                });
+                              },
+                              activeColor: AppColors.buttonGreen,
+                            ),
+                            GestureDetector(
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const PrivacyPolicyPage(),
+                                ),
+                              ),
+                              child: const Text.rich(
+                                TextSpan(
+                                  text: "J'accepte la ",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.textMuted,
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: 'politique de confidentialité',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textGreen,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 20),
                         _buildPrivacyNotice(),
