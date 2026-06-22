@@ -61,4 +61,15 @@ class ApiService {
         throw Exception(error['error']);
       }
     }
+
+    Future<void> deleteAccount(String token) async {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/auth/account'),
+        headers: {'Authorization': 'Bearer $token'}, 
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Suppression de compte échouée');
+      }
+    }
   }
