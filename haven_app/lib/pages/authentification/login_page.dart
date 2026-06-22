@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:haven_app/pages/home/home_page.dart';
 import 'package:haven_app/services/preferences.dart';
+import '../../services/session_service.dart';
 import '../../pages/onboarding/onboarding_page.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/auth_text_field.dart';
@@ -36,11 +37,15 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final response = await ApiService().login(email, password);
 
+      if (!mounted) return;
+      SessionService().setToken(response.token);
       if (_checkbox) {
         await PreferencesService().saveToken(response.token);
       }
+      if (!mounted) return;
       final onboardWait = await PreferencesService().hasSeenOnboarding();
 
+      if (!mounted) return;
       if (!onboardWait) {
         Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const OnboardingFlow()));

@@ -44,7 +44,10 @@ class _RegisterPageState extends State<RegisterPage> {
     final email = _emailController.text;
     final password = _passwordController.text;
     final name = _nameController.text;
-    final className = _classSectionController.text;
+    final classSection = _classSectionController.text.trim();
+    final className = _selectedGrade != null
+        ? '${_selectedGrade!} $classSection'.trim()
+        : classSection;
     final schoolCode = _schoolCodeController.text;
 
     if (name.trim().isEmpty) {
@@ -52,7 +55,7 @@ class _RegisterPageState extends State<RegisterPage> {
         SnackBar(content: Text("Prénom requis")));
       return;
     }
-    
+
     if (email.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Email requis")));
@@ -72,9 +75,9 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    if (className.trim().isEmpty) {
+    if (_selectedGrade == null || classSection.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Classe requise")));
+        SnackBar(content: Text("Classe requise (niveau et lettre)")));
       return;
     }
     
@@ -107,6 +110,7 @@ class _RegisterPageState extends State<RegisterPage> {
         if (mounted) navigator.pop();
       }
       catch (e) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
         }
@@ -208,7 +212,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                                 decoration: const InputDecoration.collapsed(hintText: ''),
                                                 hint: const Text('Niveau', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
                                                 style: const TextStyle(fontSize: 13, color: AppColors.textDark),
-                                                value: _selectedGrade,
+                                                initialValue: _selectedGrade,
                                                 items: _grades.map((grade) => DropdownMenuItem(
                                                   value: grade,
                                                   child: Text(grade, style: const TextStyle(fontSize: 13, color: AppColors.textDark)),
