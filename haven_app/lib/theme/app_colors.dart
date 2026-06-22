@@ -44,4 +44,7 @@ class AppColors {
 
   /// Bouton plein foncé (variantes « Clair » & « Lueur »).
   static const Color buttonDark = Color(0xFF16181C);
+
+  /// Bouton plein foncé pour suppression de compte.
+  static const Color delButton = Color.fromARGB(192, 255, 0, 0);
 }
