@@ -31,7 +31,11 @@ class PrivacyPolicyPage extends StatelessWidget {
                   "• Ton code établissement\n"
                   "• Ta classe\n\n"
                   "Lors de tes signalements, des informations sur les situations rapportées "
-                  "peuvent être collectées. Tu choisis toi-même ton niveau d'anonymat.",
+                  "peuvent être collectées. Tu choisis toi-même ton niveau d'anonymat.\n\n"
+                  "Lors de ton utilisation du check-in émotionnel, nous collectons tes "
+                  "données d'humeur quotidiennes (ressenti exprimé sur une échelle). "
+                  "Ces données sont considérées comme des données de santé psychologique "
+                  "au sens de l'Article 9 du RGPD et bénéficient d'une protection renforcée.",
             ),
             _Section(
               title: '3. Pourquoi ces données sont-elles utilisées ?',
@@ -55,8 +59,11 @@ class PrivacyPolicyPage extends StatelessWidget {
                   "• Accéder à tes données\n"
                   "• Les corriger\n"
                   "• Demander leur suppression\n"
-                  "• T'opposer à leur traitement\n\n"
+                  "• T'opposer à leur traitement\n"
+                  "• Obtenir leur portabilité (recevoir tes données dans un format lisible)\n\n"
                   "Pour exercer ces droits, contacte-nous à : PLACEHOLDER_EMAIL\n\n"
+                  "Tu as également le droit d'introduire une réclamation auprès de la CNIL "
+                  "(Commission Nationale de l'Informatique et des Libertés) : www.cnil.fr\n\n"
                   "Si tu as moins de 15 ans, l'accord d'un parent ou tuteur est nécessaire.",
             ),
             _Section(
