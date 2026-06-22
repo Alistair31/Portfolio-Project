@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../pages/authentification/login_page.dart';
 import '../services/preferences.dart';
-import '../../theme/app_colors.dart';
+import '../services/session_service.dart';
+import '../theme/app_colors.dart';
 
 
 class LogoutButton extends StatelessWidget{
@@ -49,6 +50,7 @@ class LogoutButton extends StatelessWidget{
   }
 
   Future<void> _logout(BuildContext context) async {
+    SessionService().clearToken();
     await PreferencesService().removeToken();
 
     if (!context.mounted) return;
