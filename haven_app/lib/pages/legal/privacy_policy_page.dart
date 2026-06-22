@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_colors.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
@@ -6,7 +7,9 @@ class PrivacyPolicyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Politique de confidentialité')),
+      backgroundColor: AppColors.infoBackground,
+      appBar: AppBar(title: const Text('Politique de confidentialité'),
+      backgroundColor: AppColors.infoBackground),
       body: const SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         child: Column(
@@ -16,7 +19,7 @@ class PrivacyPolicyPage extends StatelessWidget {
               title: '1. Qui collecte tes données ?',
               body:
                   "Haven est une application développée dans le cadre d'un projet scolaire. "
-                  "Le responsable du traitement est l'équipe Haven (contact : gabikill3107@gmail.com).",
+                  "Le responsable du traitement est l'équipe Haven (contact : PLACEHOLDER_EMAIL).",
             ),
             _Section(
               title: '2. Quelles données sont collectées ?',
@@ -65,7 +68,8 @@ class PrivacyPolicyPage extends StatelessWidget {
             SizedBox(height: 32),
             Text(
               'Dernière mise à jour : juin 2026',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
+              style: TextStyle(fontSize: 13,
+              color: AppColors.textDark),
             ),
             SizedBox(height: 16),
           ],
@@ -93,7 +97,8 @@ class _Section extends StatelessWidget {
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          Text(body, style: const TextStyle(fontSize: 14, height: 1.5)),
+          Text(body,
+          style: const TextStyle(fontSize: 14, height: 1.5)),
         ],
       ),
     );
