@@ -97,15 +97,92 @@
 
 ---
 
+## 13. `home_page.dart` inexistant — app non compilable
+
+**Fichiers :** `login_page.dart`, `HavenStart.dart`, `onboarding_page.dart`  
+**Erreur :** Les trois fichiers importaient `pages/home/home_page.dart` qui n'existait pas sur le disque.  
+**Impact :** Erreur de compilation — l'app ne démarrait pas du tout.  
+**Correction :** Création de `home_page.dart` avec `StatefulWidget`, `HavenBottomBar` (3 onglets : Accueil, Suivi, Compte) et un FAB central.
+
+---
+
+## 14. `_selectedGrade` jamais inclus dans le `className` envoyé à l'API
+
+**Fichier :** `haven_app/lib/pages/authentification/register_page.dart`  
+**Erreur :** La variable du dropdown (`_selectedGrade`) n'était jamais combinée avec le champ section. L'API recevait uniquement la lettre de section (ex : "A") au lieu du nom complet (ex : "6e A").  
+**Impact :** Données de classe incorrectes en base.  
+**Correction :** Construction de `className` par concaténation : `'${_selectedGrade!} $classSection'.trim()`. La validation vérifie maintenant que les deux champs sont remplis.
+
+---
+
+## 15. `mounted` manquant après `await` dans `_handleLogin`
+
+**Fichier :** `haven_app/lib/pages/authentification/login_page.dart`  
+**Erreur :** Après les appels `await ApiService().login()`, `await PreferencesService().saveToken()` et `await PreferencesService().hasSeenOnboarding()`, le code utilisait `Navigator.of(context)` sans vérifier que le widget était toujours monté.  
+**Impact :** Crash potentiel si le widget est détruit pendant une requête réseau.  
+**Correction :** Ajout de `if (!mounted) return;` après chaque `await`.
+
+---
+
+## 16. Crash `Null check operator` lors de la suppression de compte
+
+**Fichier :** `haven_app/lib/widgets/delete_button.dart`  
+**Erreur :** `token!` plantait si l'utilisateur s'était connecté sans cocher "Rester connecté" — `PreferencesService().getToken()` retournait `null` car le token n'était pas persisté sur disque.  
+**Impact :** L'app freezait à la confirmation de suppression.  
+**Correction :** Remplacement de `token!` par une vérification null avec `SnackBar` d'erreur. Résolution définitive via `SessionService` (voir #17).
+
+---
+
+## 17. Token de session inaccessible sans "Rester connecté"
+
+**Fichiers :** `login_page.dart`, `delete_button.dart`, `logout_button.dart`  
+**Erreur :** Le token JWT n'était sauvegardé dans `SharedPreferences` que si la checkbox "Rester connecté" était cochée. Les widgets nécessitant le token (`DeleteAccountButton`) ne pouvaient pas y accéder en session non persistante.  
+**Impact :** Suppression de compte impossible sans "Rester connecté".  
+**Correction :** Création de `SessionService` (variable statique en RAM) : le token est toujours stocké en mémoire pour la durée de la session, indépendamment de la checkbox. `SharedPreferences` reste utilisé uniquement pour la persistance entre sessions.
+
+---
+
+## 18. `mounted` utilisé dans un `StatelessWidget`
+
+**Fichier :** `haven_app/lib/widgets/delete_button.dart`  
+**Erreur :** `if (!mounted) return;` dans une classe qui étend `StatelessWidget`. La propriété `mounted` n'existe que dans un `State` (StatefulWidget).  
+**Impact :** Erreur de compilation.  
+**Correction :** Suppression de la ligne — le `Navigator` capturé avant le `await` est suffisant.
+
+---
+
+## 19. Chemin d'import incorrect dans `logout_button.dart`
+
+**Fichier :** `haven_app/lib/widgets/logout_button.dart`  
+**Erreur :** `import '../../theme/app_colors.dart'` remontait deux niveaux depuis `lib/widgets/`, pointant hors du dossier `lib/`.  
+**Impact :** Erreur de compilation — fichier introuvable.  
+**Correction :** Remplacement par `import '../theme/app_colors.dart'`.
+
+---
+
+## 20. `DropdownButtonFormField.value` déprécié
+
+**Fichier :** `haven_app/lib/pages/authentification/register_page.dart`  
+**Erreur :** Utilisation du paramètre `value:` sur un `DropdownButtonFormField`, déprécié depuis Flutter 3.33.  
+**Impact :** Warning de compilation.  
+**Correction :** Remplacement par `initialValue:` — fonctionne identiquement car le widget se reconstruit à chaque `setState`.
+
+---
+
 ## Audit de sécurité — Vulnérabilités identifiées
 
-### S1. Inscription ouverte sans validation du `schoolCode`
+### S1. Inscription ouverte sans validation du `schoolCode` ✅ RÉSOLU
 
 **Fichier :** `haven_backend/src/app/api/auth/register/route.ts`  
 **Sévérité :** MEDIUM | **Confiance :** 8/10  
-**Description :** N'importe qui peut créer un compte avec n'importe quelle valeur de `schoolCode`. Pas de table `School`, pas de vérification email, pas d'approbation admin.  
-**Impact :** Un attaquant externe peut s'inscrire et accéder au système de signalement comme un vrai élève.  
-**Correction :** Créer une table `School` avec les codes autorisés, vérifier l'existence du code à l'inscription, ajouter une validation par email.
+**Description :** N'importe qui pouvait créer un compte avec n'importe quelle valeur de `schoolCode`. Pas de table `School`, pas de vérification, pas d'approbation admin.  
+**Impact :** Un attaquant externe pouvait s'inscrire et accéder au système de signalement comme un vrai élève.  
+**Correction appliquée :**
+
+- Table `School` créée en base (code unique, nom, migration `add_school_table`)
+- Route `GET /api/schools` publique pour alimenter le dropdown Flutter
+- Validation dans `POST /api/auth/register` : `db.school.findUnique({ where: { code: schoolCode } })` — retourne 400 si inconnu
+- Dropdown Établissement ajouté dans `register_page.dart` — l'élève ne peut sélectionner qu'un code existant
 
 ### S2. Checkbox "Rester connecté" sans effet — token toujours persisté ✅ RÉSOLU
 
