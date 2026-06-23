@@ -16,25 +16,52 @@ class RegisterPage extends StatefulWidget {
 class _RegisterPageState extends State<RegisterPage> {
   bool _obscurePassword = true;
   bool _privacyConsentCheckbox = false;
+  bool _isLoadingSchools = true;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _schoolCodeController = TextEditingController();
+  List<School> _schools = [];
+  String? _selectedSchoolCode;
   String? _selectedGrade;
-  static const List<String> _grades = [
-  '6e', '5e', '4e', '3e', '3e SEGPA',
-  '2nde', '2nde STI2D',
-  '1ère G', '1ère STI2D',
-  'T° G', 'T° STI2D',
-  'CAP', 'BAC Pro', 'BTS', 'CPGE',
-  ];
+
+  static const Map<String, List<String>> _gradesByType = {
+    'COLLEGE':  ['6e', '5e', '4e', '3e', '3e SEGPA'],
+    'LYCEE':    ['2nde', '2nde STI2D', '1ère G', '1ère STI2D', 'T° G', 'T° STI2D'],
+    'BTS_CPGE': ['CAP', 'BAC Pro', 'BTS', 'CPGE'],
+    'MIXED':    ['6e', '5e', '4e', '3e', '3e SEGPA', '2nde', '2nde STI2D', '1ère G', '1ère STI2D', 'T° G', 'T° STI2D', 'CAP', 'BAC Pro', 'BTS', 'CPGE'],
+  };
+
+  List<String> get _grades {
+    final school = _schools.where((s) => s.code == _selectedSchoolCode).firstOrNull;
+    if (school == null) return [];
+    return _gradesByType[school.type] ?? [];
+  }
   final TextEditingController _classSectionController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSchools();
+  }
+
+  Future<void> _loadSchools() async {
+    try {
+      final schools = await ApiService().getSchools();
+      if (!mounted) return;
+      setState(() {
+        _schools = schools;
+        _isLoadingSchools = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isLoadingSchools = false);
+    }
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
-    _schoolCodeController.dispose();
     _classSectionController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -48,7 +75,7 @@ class _RegisterPageState extends State<RegisterPage> {
     final className = _selectedGrade != null
         ? '${_selectedGrade!} $classSection'.trim()
         : classSection;
-    final schoolCode = _schoolCodeController.text;
+    final schoolCode = _selectedSchoolCode ?? '';
 
     if (name.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -69,9 +96,9 @@ class _RegisterPageState extends State<RegisterPage> {
       }
     }
 
-    if (schoolCode.trim().isEmpty) {
+    if (_selectedSchoolCode == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Code établissement requis")));
+        SnackBar(content: Text("Établissement requis")));
       return;
     }
 
@@ -164,11 +191,57 @@ class _RegisterPageState extends State<RegisterPage> {
                             children: [
                               Expanded(
                                 flex: 3,
-                                child: AuthTextField(
-                                  label: 'Code établissement',
-                                  icon: Icons.shield_outlined,
-                                  hintText: 'Ex : LSJ-31',
-                                  controller: _schoolCodeController,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    const Text(
+                                      'Établissement',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.label,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.fieldBackground,
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(color: AppColors.fieldBorder),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.03),
+                                              blurRadius: 12,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: DropdownButtonFormField<String>(
+                                                dropdownColor: Colors.white,
+                                                isExpanded: true,
+                                                isDense: true,
+                                                decoration: const InputDecoration(
+                                                  border: InputBorder.none,
+                                                  contentPadding: EdgeInsets.zero,
+                                                ),
+                                                hint: const Text('Établissement', style: TextStyle(fontSize: 13, color: AppColors.textMuted)),
+                                                style: const TextStyle(fontSize: 13, color: AppColors.textDark),
+                                                initialValue: _selectedSchoolCode,
+                                                items: _schools.map((school) => DropdownMenuItem(
+                                                  value: school.code,
+                                                  child: Text(school.name, style: const TextStyle(fontSize: 13, color: AppColors.textDark)),
+                                                )).toList(),
+                                                onChanged: _isLoadingSchools ? null : (value) => setState(() {
+                                                  _selectedSchoolCode = value;
+                                                  _selectedGrade = null;
+                                                }),
+                                              ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                               const SizedBox(width: 12),
