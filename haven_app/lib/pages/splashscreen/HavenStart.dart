@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import '../../services/preferences.dart';
+import '../home/home_page.dart';
 import '../authentification/login_page.dart';
 
 class HavenScreen extends StatefulWidget {
@@ -17,21 +18,44 @@ class _HavenScreenState extends State<HavenScreen> {
   }
 
   void _goToLogin() {
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 3), () async{
+      final token = await PreferencesService().getToken();
+
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) =>
-              const LoginPage(),
-          transitionsBuilder:
-              (context, animation, secondaryAnimation, child) =>
-                  FadeTransition(
-            opacity: CurvedAnimation(parent: animation, curve: Curves.easeIn),
-            child: child,
+
+      if (token != null) {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const HomePage(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) =>
+                    FadeTransition(
+              opacity: CurvedAnimation(
+                parent: animation,
+              curve: Curves.easeIn),
+              child: child,
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                const LoginPage(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) =>
+                    FadeTransition(
+              opacity: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeIn),
+              child: child,
+            ),
+          ),
+        );
+      }
     });
   }
 
