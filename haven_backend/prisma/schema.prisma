@@ -95,3 +95,18 @@ model Notification {
   user   User   @relation(fields: [userId], references: [id])
   report Report @relation(fields: [reportId], references: [id])
 }
+
+enum SchoolType {
+  COLLEGE
+  LYCEE
+  BTS_CPGE
+  MIXED
+}
+
+model School {
+  id        String     @id @default(cuid())
+  code      String     @unique
+  name      String
+  type      SchoolType @default(MIXED)
+  createdAt DateTime   @default(now())
+}
