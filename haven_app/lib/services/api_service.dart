@@ -82,6 +82,34 @@ class ApiService {
       }
     }
 
+    Future<void> submitReport({
+      required String token,
+      required String type,
+      required int gravity,
+      required String description,
+      required String targetLevel,
+      required String anonymityLevel,
+    }) async {
+      final response = await http.post(
+        Uri.parse('$baseUrl/reports'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'type': type,
+          'gravity': gravity,
+          'description': description,
+          'targetLevel': targetLevel,
+          'anonymityLevel': anonymityLevel,
+        }),
+      );
+      if (response.statusCode != 201) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['error'] ?? 'Erreur lors de l\'envoi');
+      }
+    }
+
     Future<void> deleteAccount(String token) async {
       final response = await http.delete(
         Uri.parse('$baseUrl/auth/account'),
