@@ -6,11 +6,19 @@ const String baseUrl = String.fromEnvironment(
   defaultValue: 'http://10.0.2.2:3000/api',
 );
 
+class School {
+  final String code;
+  final String name;
+  final String type;
+
+  School({required this.code, required this.name, required this.type});
+}
+
 class AuthUser {
   final String id;
   final String name;
   final String role;
-  
+
   AuthUser({required this.id, required this.name, required this.role});
 
 }
@@ -59,6 +67,18 @@ class ApiService {
       } else {
         final error = jsonDecode(response.body);
         throw Exception(error['error']);
+      }
+    }
+
+    Future<List<School>> getSchools() async {
+      final response = await http
+          .get(Uri.parse('$baseUrl/schools'))
+          .timeout(const Duration(seconds: 5), onTimeout: () => http.Response('[]', 408));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((e) => School(code: e['code'], name: e['name'], type: e['type'] as String)).toList();
+      } else {
+        throw Exception('Impossible de charger les établissements');
       }
     }
 
