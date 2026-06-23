@@ -92,3 +92,6 @@ next-env.d.ts
 haven_backend/package-lock.json
 haven_backend/package.json
 haven_app/devtools_options.yaml
+API.md
+explication_modifications.md
+rapport_bugs.md
