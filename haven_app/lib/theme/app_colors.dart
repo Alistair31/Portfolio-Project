@@ -47,4 +47,61 @@ class AppColors {
 
   /// Bouton plein foncé pour suppression de compte.
   static const Color delButton = Color.fromARGB(192, 255, 0, 0);
+
+  // --- Tokens maquette Figma (Espace élève) ---
+
+  /// Racing Green — textes foncés / titres.
+  static const Color racingGreen = Color(0xFF14201B);
+
+  /// Mantle — textes secondaires.
+  static const Color mantle = Color(0xFF8A958F);
+
+  /// Granny Smith Apple — vert principal (grand bloc + FAB).
+  static const Color grannySmith = Color(0xFF8BEBA0);
+
+  /// Outer Space — sous-titre du grand bloc.
+  static const Color outerSpace = Color(0xFF23332C);
+
+  /// Blue Romance — fond du badge « suivi ».
+  static const Color blueRomance = Color(0xFFCBF6D4);
+
+  /// Eucalyptus — point du badge « suivi ».
+  static const Color eucalyptus = Color(0xFF2C8A6B);
+
+  /// Fond des pastilles d'icône (cartes).
+  static const Color iconTint = Color(0xFFE3FAE8);
+
+  /// Edward — éléments de navigation inactifs.
+  static const Color edward = Color(0xFFAAB2AC);
+
+  /// Ecru White — anneau autour du FAB.
+  static const Color ecruWhite = Color(0xFFFBFAF5);
+
+  /// Bordure fine « Racing Green 9% » (rgba(20,32,27,.09)).
+  static const Color hairline = Color(0x1714201B);
+
+  /// Bordure « Racing Green 16% » (humeurs non sélectionnées).
+  static const Color hairlineStrong = Color(0x2914201B);
+
+  /// Corduroy — sous-titres doux (check-in / signalement).
+  static const Color corduroy = Color(0xFF56655D);
+
+  /// De York — humeur sélectionnée + pastilles « positives » du journal.
+  static const Color deYork = Color(0xFF8BCB7E);
+
+  // --- Espace élève / Check-in / Signalement ---
+
+  /// Bouton d'urgence (SOS) — corail (Burnt Sienna).
+  static const Color sos = Color(0xFFE8654E);
+
+  /// Accent vert foncé pour les éléments sélectionnés
+  /// (humeur du check-in, carte de signalement active).
+  static const Color selectionGreen = Color(0xFF2E8B57);
+
+  /// Fond vert clair d'une carte sélectionnée (choix du signalement).
+  static const Color selectionCardBg = Color(0xFFA9E6BF);
+
+  /// Grand bloc « Besoin de parler ? » — dégradé (haut -> bas).
+  static const Color heroGreenTop = Color(0xFF82D99C);
+  static const Color heroGreenBottom = Color(0xFFA9E8BF);
 }

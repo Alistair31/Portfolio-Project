@@ -7,6 +7,7 @@ import '../theme/app_colors.dart';
 /// (+ [foregroundColor]) pour les variantes "Clair" et "Lueur".
 class PrimaryButton extends StatelessWidget {
   final String label;
+  final IconData? leadingIcon;
   final IconData? trailingIcon;
   final VoidCallback? onPressed;
   final Color backgroundColor;
@@ -15,6 +16,7 @@ class PrimaryButton extends StatelessWidget {
   const PrimaryButton({
     super.key,
     required this.label,
+    this.leadingIcon,
     this.trailingIcon,
     this.onPressed,
     this.backgroundColor = AppColors.buttonGreen,
@@ -35,6 +37,10 @@ class PrimaryButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              if (leadingIcon != null) ...[
+                Icon(leadingIcon, size: 20, color: foregroundColor),
+                const SizedBox(width: 10),
+              ],
               Text(
                 label,
                 style: TextStyle(
