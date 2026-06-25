@@ -4,6 +4,8 @@ import '../../widgets/haven_logo.dart';
 import '../../widgets/logout_button.dart';
 import '../../widgets/delete_button.dart';
 import '../../widgets/haven_bottom_bar.dart';
+import '../report/report_page.dart';
+import '../chatbot/chatbot_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -35,7 +37,7 @@ class _HomePageState extends State<HomePage> {
         child: SafeArea(child: _pages[_currentIndex]),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ReportPage())),
         backgroundColor: AppColors.buttonGreen,
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -53,13 +55,13 @@ class _AccueilTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HavenLogo(size: 96),
-          SizedBox(height: 24),
-          Text(
+          const HavenLogo(size: 96),
+          const SizedBox(height: 24),
+          const Text(
             'Bienvenue sur Haven',
             style: TextStyle(
               fontSize: 24,
@@ -67,10 +69,24 @@ class _AccueilTab extends StatelessWidget {
               color: AppColors.textDark,
             ),
           ),
-          SizedBox(height: 8),
-          Text(
+          const SizedBox(height: 8),
+          const Text(
             'Ton espace est prêt.',
             style: TextStyle(fontSize: 16, color: AppColors.textMuted),
+          ),
+          const SizedBox(height: 32),
+          OutlinedButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ChatbotPage()),
+            ),
+            icon: const Icon(Icons.chat_bubble_outline, size: 18),
+            label: const Text('Besoin d\'aide ?'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.buttonGreen,
+              side: const BorderSide(color: AppColors.buttonGreen),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            ),
           ),
         ],
       ),
