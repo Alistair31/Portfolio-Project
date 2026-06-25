@@ -1,8 +1,11 @@
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import jwt from 'jsonwebtoken'
+import { applyAnonymity } from '@/lib/anonymize'
+import { generateTrackingCode } from '@/lib/tracking'
 
 const schema = z.object({
+  mode:           z.enum(['VICTIM', 'WITNESS']).default('VICTIM'),
   type:           z.enum(['PHYSICAL', 'VERBAL', 'SEXUAL', 'CYBER', 'OTHER']),
   gravity:        z.number().int().min(1).max(5),
   description:    z.string().min(10).max(1000),
@@ -47,14 +50,17 @@ export async function POST(request: Request) {
   }
 
   try {
+    const trackingCode = await generateTrackingCode()
+
     const report = await db.report.create({
       data: {
         ...result.data,
         authorId: user.id,
+        trackingCode,
       },
     })
 
-    return new Response(JSON.stringify({ success: true, id: report.id }), {
+    return new Response(JSON.stringify({ success: true, id: report.id, trackingCode: report.trackingCode }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' },
     })
@@ -66,6 +72,9 @@ export async function POST(request: Request) {
     })
   }
 }
+
+const VALID_STATUSES  = ['PENDING', 'IN_PROGRESS', 'CLOSED'] as const
+const VALID_TYPES     = ['PHYSICAL', 'VERBAL', 'SEXUAL', 'CYBER', 'OTHER'] as const
 
 export async function GET(request: Request) {
   const user = extractUser(request)
@@ -84,6 +93,19 @@ export async function GET(request: Request) {
     })
   }
 
+  // Lecture des query params optionnels
+  const { searchParams } = new URL(request.url)
+  const statusParam  = searchParams.get('status')
+  const typeParam    = searchParams.get('type')
+  const gravityParam = searchParams.get('gravity')
+  const codeParam    = searchParams.get('code')
+
+  // Validation souple : valeur inconnue = ignorée (pas d'erreur 400)
+  const statusFilter  = VALID_STATUSES.includes(statusParam as never)  ? statusParam  as typeof VALID_STATUSES[number]  : undefined
+  const typeFilter    = VALID_TYPES.includes(typeParam as never)        ? typeParam    as typeof VALID_TYPES[number]     : undefined
+  const gravityFilter = gravityParam ? parseInt(gravityParam, 10) : undefined
+  const codeFilter    = codeParam?.trim() || undefined
+
   try {
     const staffUser = await db.user.findUnique({
       where: { id: user.id },
@@ -92,11 +114,18 @@ export async function GET(request: Request) {
 
     const reports = await db.report.findMany({
       where: {
-        targetLevel: user.role as 'TEACHER' | 'DIRECTOR_CPE' | 'RECTORAT',
-        author: { schoolCode: staffUser?.schoolCode ?? '' },
+        targetLevel:  user.role as 'TEACHER' | 'DIRECTOR_CPE' | 'RECTORAT',
+        author:       { schoolCode: staffUser?.schoolCode ?? '' },
+        // Filtres optionnels — undefined = Prisma ignore le champ
+        ...(statusFilter  && { status:       statusFilter }),
+        ...(typeFilter    && { type:         typeFilter }),
+        ...(gravityFilter && { gravity:      gravityFilter }),
+        ...(codeFilter    && { trackingCode: codeFilter }),
       },
       select: {
         id:             true,
+        trackingCode:   true,
+        mode:           true,
         type:           true,
         gravity:        true,
         description:    true,
@@ -114,7 +143,12 @@ export async function GET(request: Request) {
       orderBy: { createdAt: 'desc' },
     })
 
-    return new Response(JSON.stringify(reports), {
+    const safeReports = reports.map((r) => ({
+      ...r,
+      author: applyAnonymity(r.author, r.anonymityLevel),
+    }))
+
+    return new Response(JSON.stringify(safeReports), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     })
