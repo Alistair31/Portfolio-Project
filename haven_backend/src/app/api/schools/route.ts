@@ -13,7 +13,7 @@ export async function GET() {
     })
   } catch (error) {
     console.error('[GET /api/schools]', error)
-    return new Response(JSON.stringify({ error: 'Database error', detail: String(error) }), {
+    return new Response(JSON.stringify({ error: 'Database error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     })
