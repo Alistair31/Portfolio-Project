@@ -39,6 +39,11 @@ enum AnonymityLevel {
   FULLY_ANONYMOUS
 }
 
+enum ReportMode {
+  VICTIM
+  WITNESS
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -53,10 +58,13 @@ model User {
   reports       Report[]
   followUps     FollowUp[]
   notifications Notification[]
+  moods         Mood[]
 }
 
 model Report {
   id             String         @id @default(cuid())
+  trackingCode   String         @unique
+  mode           ReportMode     @default(VICTIM)
   type           ReportType
   gravity        Int
   description    String
@@ -101,6 +109,15 @@ enum SchoolType {
   LYCEE
   BTS_CPGE
   MIXED
+}
+
+model Mood {
+  id        String   @id @default(cuid())
+  level     Int
+  createdAt DateTime @default(now())
+  userId    String
+
+  user User @relation(fields: [userId], references: [id])
 }
 
 model School {
