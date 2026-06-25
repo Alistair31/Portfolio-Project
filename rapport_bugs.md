@@ -184,6 +184,30 @@
 - Validation dans `POST /api/auth/register` : `db.school.findUnique({ where: { code: schoolCode } })` — retourne 400 si inconnu
 - Dropdown Établissement ajouté dans `register_page.dart` — l'élève ne peut sélectionner qu'un code existant
 
+### S3. Anonymat des signalements non appliqué côté serveur ✅ RÉSOLU
+
+**Fichiers :** `haven_backend/src/app/api/reports/route.ts`, `haven_backend/src/app/api/reports/[id]/route.ts`
+**Sévérité :** HIGH | **Confiance :** 9/10
+**Description :** Les routes staff (`GET /api/reports` et `GET /api/reports/[id]`) retournaient systématiquement `author.name`, `author.className` et `author.schoolCode` dans la réponse JSON, quelle que soit la valeur de `anonymityLevel` choisie par l'élève au moment du signalement. Le champ `anonymityLevel` était présent dans la réponse mais jamais consulté avant l'envoi des données d'identité.
+**Impact :** Un membre du staff authentifié recevait l'identité complète de l'élève même si celui-ci avait sélectionné `FULLY_ANONYMOUS`. L'élève croyait être protégé — il ne l'était pas. Dans le contexte d'une application de signalement de harcèlement pour mineurs, cette faille exposait directement les victimes à des représailles.
+**Correction appliquée :**
+
+- Création de `haven_backend/src/lib/anonymize.ts` : fonction partagée `applyAnonymity(author, level)` qui masque `name`, `className` et `schoolCode` selon le niveau (`NAME_HIDDEN` → masque le nom, `NAME_AND_CLASS_HIDDEN` → masque nom et classe, `FULLY_ANONYMOUS` → masque tout)
+- `reports/route.ts` : map post-requête appliquant `applyAnonymity` sur chaque signalement avant sérialisation
+- `reports/[id]/route.ts` : application de `applyAnonymity` après la vérification inter-établissement, avant le `JSON.stringify`
+
+---
+
+### S4. Fuite d'erreur interne dans `GET /api/schools` ✅ RÉSOLU
+
+**Fichier :** `haven_backend/src/app/api/schools/route.ts`
+**Sévérité :** MEDIUM | **Confiance :** 9/10
+**Description :** Le handler d'erreur de cette route retournait `{ error: 'Database error', detail: String(error) }`. Contrairement à toutes les autres routes du projet (qui retournent uniquement un message générique), ce `String(error)` exposait le texte brut de l'erreur Prisma/postgres dans la réponse HTTP. Les erreurs de connexion Prisma (`PrismaPg`/`node-postgres`) incluent typiquement le host, le port et des fragments de la `DATABASE_URL` — laquelle contient une clé secrète. Ce endpoint est accessible sans authentification.
+**Impact :** Un attaquant provoquant une erreur 500 (panne transitoire DB, burst de requêtes) recevait en clair des informations sur l'infrastructure database, potentiellement incluant la chaîne de connexion.
+**Correction appliquée :** Suppression du champ `detail` ; le handler retourne maintenant `{ error: 'Database error' }` avec `status: 500`, aligné sur le pattern des autres routes. L'erreur complète reste loggée côté serveur via `console.error`.
+
+---
+
 ### S2. Checkbox "Rester connecté" sans effet — token toujours persisté ✅ RÉSOLU
 
 **Fichier :** `haven_app/lib/pages/authentification/login_page.dart:37`  
