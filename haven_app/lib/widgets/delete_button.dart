@@ -1,55 +1,63 @@
 import 'package:flutter/material.dart';
-import '../services/preferences.dart';
 import '../services/session_service.dart';
 import '../services/api_service.dart';
-import '../pages/authentification/login_page.dart';
-
 
 class DeleteAccountButton extends StatelessWidget {
-  const DeleteAccountButton({super.key,});
+  const DeleteAccountButton({super.key});
 
-  Future<void> _deleteAccount(BuildContext context) async {
-  final confirmed = await showDialog<bool>(
-  context: context,
-  builder: (dialogContext) => AlertDialog(
-    title: Text('ATTENTION'),
-    content: Text('Etes vous sur de vouloir supprimer votre compte?\n'
-             'Les données seront definitivement effacées sous les 30 jours\n'
-             ' comme le prevois le Règlement Général sur la Protection des Données \n'),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.of(dialogContext).pop(false),
-        child: Text('Annuler')),
-      TextButton(
-        onPressed: () => Navigator.of(dialogContext).pop(true),
-        child: Text('Supprimer')),
-    ],
-  ),
-);
-if (confirmed != true) return;
+  Future<void> _requestDeletion(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Demander la suppression'),
+        content: const Text(
+          'Ta demande sera transmise à un administrateur.\n'
+          'Ton compte sera supprimé après validation.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Envoyer la demande'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
 
-final navigator = Navigator.of(context);
-final token = SessionService().getToken();
+    final token = SessionService().getToken();
+    if (token == null) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Session expirée. Reconnecte-toi.')),
+      );
+      return;
+    }
 
-if (token == null) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text('Session expirée. Reconnecte-toi pour supprimer ton compte.')),
-  );
-  return;
-}
-
-await ApiService().deleteAccount(token);
-await PreferencesService().removeToken();
-
-navigator.pushAndRemoveUntil(MaterialPageRoute(
-  builder: (_) => const LoginPage()),
-  (route) => false);
+    try {
+      await ApiService().requestAccountDeletion(token);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Demande envoyée. Un administrateur traitera ta demande.'),
+          duration: Duration(seconds: 4),
+        ),
+      );
+    } on Exception catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return TextButton.icon(
-      onPressed: () => _deleteAccount(context),
+      onPressed: () => _requestDeletion(context),
       icon: const Icon(Icons.delete_outline, color: Colors.red),
       label: const Text('Supprimer mon compte', style: TextStyle(color: Colors.red)),
     );
