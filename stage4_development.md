@@ -9,7 +9,7 @@
 
 **Tech Stack:**
 - Frontend: Flutter (Android/iOS)
-- Backend: Next.js 14 (App Router) + TypeScript
+- Backend: Next.js 15 (App Router) + TypeScript
 - Database: PostgreSQL via Prisma ORM
 - Version Control: Git / GitHub — https://github.com/Alistair31/Portfolio-Project
 
@@ -30,11 +30,15 @@
 
 | Feature | Status |
 |---|---|
-| Student tracking tab (view own reports + tracking code) | ❌ Pending |
-| Victim / Witness mode in report form | ❌ Pending |
+| Tracking code in submission confirmation | ✅ Done — backend returns `trackingCode`, Flutter dialog displays it |
+| Victim / Witness mode in report form | ✅ Done — `ReportTargetPage` + `mode` field in API |
+| Report 5-minute cancellation window | ✅ Done — `DELETE /api/reports/mine/[id]` |
+| Admin report filtering (status, type, gravity, code) | ✅ Done — query params on `GET /api/reports` |
+| Mood check-in UI + API | ✅ Done — `emotional_checkin_page.dart` + `POST /api/mood` + `GET /api/mood` |
+| Rectorat stats dashboard (backend) | ✅ Done — `GET /api/stats` |
+| Student tracking tab (view own reports) | ❌ Pending — Flutter UI not yet built |
 | Staff interface (list & manage reports) | ❌ Pending |
-| Follow-up creation by staff (status updates) | ❌ Pending |
-| Mood check-in UI | ❌ Pending |
+| Follow-up creation by staff (status updates) | ❌ Pending — endpoint `POST /api/reports/[id]/followup` missing |
 | Integration testing & final QA | ❌ Pending |
 
 ---
@@ -69,11 +73,11 @@
 | Priority | Task | Assigned to | API Dependency |
 |---|---|---|---|
 | **Must Have** | Suivi tab: fetch and display student's own reports | Gabriel | `GET /api/reports/mine` ✅ |
-| **Must Have** | Display tracking code in post-submission confirmation dialog | Gabriel | `POST /api/reports` (add field to response) |
-| **Must Have** | Add Victim / Witness mode selector in report form | Gabriel | `POST /api/reports` (add `mode` field) |
+| **Must Have** | Display tracking code in post-submission confirmation dialog | Gabriel ✅ | `POST /api/reports` ✅ returns `trackingCode` |
+| **Must Have** | Add Victim / Witness mode selector in report form | Gabriel ✅ | `POST /api/reports` ✅ `mode` field added |
 | **Should Have** | Report detail page from Suivi tab | Gabriel | `GET /api/reports/mine/[id]` ✅ |
 | **Should Have** | Pull-to-refresh on Suivi tab | Gabriel | — |
-| **Could Have** | Mood check-in widget on Accueil tab | Gabriel | `POST /api/mood` ✅ |
+| **Could Have** | Mood check-in widget on Accueil tab | Gabriel ✅ | `POST /api/mood` ✅ + `GET /api/mood` ✅ |
 | **Won't Have** | Staff interface | — | — |
 | **Won't Have** | Push notifications | — | — |
 
@@ -81,13 +85,14 @@
 
 | Priority | Task | Assigned to | API Dependency |
 |---|---|---|---|
-| **Must Have** | Role-based routing on login (staff vs student) | Gabriel | `POST /api/auth/login` ✅ (role in JWT) |
+| **Must Have** | Role-based routing on login (staff vs student) | Gabriel ✅ | `POST /api/auth/login` ✅ (role in JWT) |
 | **Must Have** | Staff reports list view (school-filtered, anonymization respected) | Gabriel | `GET /api/reports` ✅ |
 | **Must Have** | Report detail view for staff | Gabriel | `GET /api/reports/[id]` ✅ |
 | **Must Have** | Follow-up creation (status update + notes) | Gabriel + Alistair | `POST /api/reports/[id]/followup` ❌ new endpoint |
-| **Should Have** | Filter reports by status / type / gravity | Gabriel | query params on `GET /api/reports` |
+| **Should Have** | Filter reports by status / type / gravity | Gabriel | `GET /api/reports?status=&type=&gravity=&code=` ✅ backend done |
 | **Should Have** | Admin user management screen | Gabriel | `GET /api/admin/users` ✅ |
-| **Could Have** | Mood history chart (7-day view) | Gabriel | `GET /api/mood` ✅ |
+| **Should Have** | Rectorat stats dashboard | Alistair ✅ | `GET /api/stats` ✅ byStatus / byType / byGravity / bySchool |
+| **Could Have** | Mood history chart (7-day view) | Gabriel ✅ | `GET /api/mood` ✅ |
 | **Won't Have** | Push notifications | — | — |
 
 #### Sprint 3 — Integration, QA & Polish
@@ -109,22 +114,27 @@
 
 ```
 Sprint 1:
-  Tracking code display
-    └─ requires: POST /api/reports returns trackingCode in response
+  Tracking code display ✅ RESOLVED
+    └─ POST /api/reports now returns trackingCode in response
 
-  Victim/Witness mode
-    └─ requires: mode field added to POST /api/reports body
+  Victim/Witness mode ✅ RESOLVED
+    └─ mode field added to POST /api/reports; ReportTargetPage passes value
 
 Sprint 2:
-  Staff role routing
-    └─ requires: role field present in JWT (already the case)
+  Staff role routing ✅ RESOLVED
+    └─ login_page.dart routes STUDENT → StudentHomePage, TEACHER/DIRECTOR_CPE/RECTORAT → staff UI (pending)
 
-  Follow-up creation
+  Follow-up creation ❌ BLOCKED
     └─ requires: new endpoint POST /api/reports/[id]/followup (Alistair)
     └─ blocks: status update UI (Gabriel)
 
-  Filter reports
-    └─ requires: staff list view completed first
+  Filter reports ✅ BACKEND DONE
+    └─ GET /api/reports accepts ?status=&type=&gravity=&code=
+    └─ Flutter filter UI not yet built
+
+  Rectorat stats ✅ BACKEND DONE
+    └─ GET /api/stats returns aggregated byStatus/byType/byGravity/bySchool
+    └─ Flutter dashboard UI not yet built
 ```
 
 ---
@@ -238,10 +248,13 @@ Blockers are escalated to the PM immediately and resolved the same day when poss
 
 | Task | Expected State | Actual State |
 |---|---|---|
-| Suivi tab (list view) | In progress or done | _to be filled_ |
-| Tracking code display | Done | _to be filled_ |
-| Victim/Witness mode | Done | _to be filled_ |
-| Report detail page | In progress | _to be filled_ |
+| Suivi tab (list view) | In progress or done | ❌ Not started — Flutter UI pending |
+| Tracking code display | Done | ✅ Done — API returns `trackingCode`, dialog displays it |
+| Victim/Witness mode | Done | ✅ Done — `ReportTargetPage` + `mode` field in API and Flutter |
+| Mood check-in | Optional | ✅ Done — full UI + API (`POST` + `GET /api/mood`) |
+| Report detail page | In progress | ❌ Not started — Flutter UI pending |
+| Report cancellation (5 min) | — | ✅ Done (unplanned) — `DELETE /api/reports/mine/[id]` |
+| Rectorat stats API | — | ✅ Done (unplanned) — `GET /api/stats` |
 
 ---
 
