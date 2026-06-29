@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
+import '../../services/preferences.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/primary_button.dart';
 
 class ReportPage extends StatefulWidget {
-  // Permet au chatbot de pré-sélectionner un type au lancement
   final String? initialType;
+  // VICTIM (défaut) ou WITNESS selon le choix de ReportTargetPage
+  final String mode;
 
-  const ReportPage({super.key, this.initialType});
+  const ReportPage({super.key, this.initialType, this.mode = 'VICTIM'});
 
   @override
   State<ReportPage> createState() => _ReportPageState();
@@ -87,14 +89,24 @@ class _ReportPageState extends State<ReportPage> {
     setState(() => _isSubmitting = true);
 
     try {
-      await ApiService().submitReport(
+      final result = await ApiService().submitReport(
         token: token,
+        mode: widget.mode,
         type: _selectedType!,
         gravity: _gravity,
         description: _descriptionController.text.trim(),
         targetLevel: _selectedTarget!,
         anonymityLevel: _selectedAnonymity!,
       );
+
+      await PreferencesService().saveIntegrityHash(result['id']!, result['integrityHash']!);
+      await PreferencesService().saveReportSnapshot(result['id']!, {
+        'type':           _selectedType,
+        'gravity':        _gravity,
+        'mode':           widget.mode,
+        'anonymityLevel': _selectedAnonymity,
+        'description':    _descriptionController.text.trim(),
+      });
 
       if (!mounted) return;
       await showDialog(
@@ -191,24 +203,47 @@ class _ReportPageState extends State<ReportPage> {
                       const SizedBox(height: 24),
                       _buildSection(
                         title: 'Description',
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.fieldBackground,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AppColors.fieldBorder),
-                          ),
-                          child: TextField(
-                            controller: _descriptionController,
-                            maxLines: 5,
-                            maxLength: 1000,
-                            style: const TextStyle(fontSize: 14, color: AppColors.textDark),
-                            decoration: const InputDecoration(
-                              hintText: 'Décris la situation en quelques mots…',
-                              hintStyle: TextStyle(color: AppColors.textMuted),
-                              contentPadding: EdgeInsets.all(16),
-                              border: InputBorder.none,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: AppColors.fieldBackground,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: AppColors.fieldBorder),
+                              ),
+                              child: TextField(
+                                controller: _descriptionController,
+                                maxLines: 5,
+                                maxLength: 1000,
+                                style: const TextStyle(fontSize: 14, color: AppColors.textDark),
+                                decoration: const InputDecoration(
+                                  hintText: 'Décris la situation en quelques mots…',
+                                  hintStyle: TextStyle(color: AppColors.textMuted),
+                                  contentPadding: EdgeInsets.all(16),
+                                  border: InputBorder.none,
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 8),
+                            const Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(Icons.info_outline, size: 13, color: AppColors.textMuted),
+                                SizedBox(width: 5),
+                                Expanded(
+                                  child: Text(
+                                    'Ne mentionne pas ton prénom ni d\'infos qui pourraient t\'identifier, même si tu choisis l\'anonymat.',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      height: 1.4,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 24),
