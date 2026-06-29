@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:haven_app/pages/home/home_page.dart';
+import 'package:haven_app/pages/staff/staff_home_page.dart';
+import 'package:haven_app/pages/student/student_home_page.dart';
 import 'package:haven_app/services/preferences.dart';
 import '../../services/session_service.dart';
 import '../../pages/onboarding/onboarding_page.dart';
@@ -39,6 +40,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
       SessionService().setToken(response.token);
+      SessionService().setUser(role: response.user.role, name: response.user.name);
       if (_checkbox) {
         await PreferencesService().saveToken(response.token);
       }
@@ -54,19 +56,19 @@ class _LoginPageState extends State<LoginPage> {
 
           case 'STUDENT':
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const HomePage()),
+              MaterialPageRoute(builder: (_) => const StudentHomePage()),
             );
           case 'TEACHER':
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const Placeholder()),
+              MaterialPageRoute(builder: (_) => const StaffHomePage()),
             );
           case 'DIRECTOR_CPE':
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const Placeholder()),
+              MaterialPageRoute(builder: (_) => const StaffHomePage()),
             );
           case 'RECTORAT':
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const Placeholder()),
+              MaterialPageRoute(builder: (_) => const StaffHomePage()),
             );
           default:
             ScaffoldMessenger.of(context).showSnackBar(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/preferences.dart';
 import '../../theme/app_colors.dart';
-import '../home/home_page.dart';
+import '../student/student_home_page.dart';
 import 'onboarding_clair.dart';
 import 'onboarding_lueur.dart';
 import 'onboarding_refuge.dart';
@@ -42,7 +42,7 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   Future<void> _finish() async {
     await PreferencesService().setOnboardingSeen();
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const HomePage()),
+      MaterialPageRoute(builder: (_) => const StudentHomePage()),
     );
   }
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/preferences.dart';
-import '../home/home_page.dart';
+import '../student/student_home_page.dart';
 import '../authentification/login_page.dart';
 
 class HavenScreen extends StatefulWidget {
@@ -28,7 +28,7 @@ class _HavenScreenState extends State<HavenScreen> {
           context,
           PageRouteBuilder(
             pageBuilder: (context, animation, secondaryAnimation) =>
-                const HomePage(),
+                const StudentHomePage(),
             transitionsBuilder:
                 (context, animation, secondaryAnimation, child) =>
                     FadeTransition(
@@ -68,8 +68,8 @@ class _HavenScreenState extends State<HavenScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset('assets/images/haven-logo.png', width: 150),
-            SizedBox(height: 24),
-            Text(
+            const SizedBox(height: 24),
+            const Text(
               'Haven',
               style: TextStyle(
                 fontSize: 24,
