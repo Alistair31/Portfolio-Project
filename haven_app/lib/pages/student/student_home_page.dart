@@ -7,8 +7,10 @@ import '../../widgets/greeting_header.dart';
 import '../../widgets/haven_bottom_bar.dart';
 import '../../widgets/sos_button.dart';
 import '../../widgets/talk_hero_card.dart';
+import '../chatbot/chatbot_page.dart';
 import '../report/report_target_page.dart';
-import 'emotional_checkin_page.dart';
+import 'account_page.dart';
+import 'suivi_page.dart';
 
 /// Écran 3 · Espace élève — « Accueil connecté ».
 /// Page d'accueil de l'élève une fois connecté·e : entrée vers la
@@ -24,10 +26,15 @@ class _StudentHomePageState extends State<StudentHomePage> {
   int _currentIndex = 0;
 
   void _onTabTap(int index) {
-    // L'onglet « Suivi » ouvre le check-in émotionnel.
     if (index == 1) {
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const EmotionalCheckinPage()),
+        MaterialPageRoute(builder: (_) => const SuiviPage()),
+      );
+      return;
+    }
+    if (index == 2) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const AccountPage()),
       );
       return;
     }
@@ -71,14 +78,18 @@ class _StudentHomePageState extends State<StudentHomePage> {
                       title: 'Besoin de parler de\nquelque chose ?',
                       subtitle:
                           "Je t'écoute, à ton rythme et en toute\nconfidentialité.",
-                      onStart: () {},
+                      onStart: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ChatbotPage()),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     ConversationCard(
                       title: 'Conversation en cours',
                       subtitle: "Reprends où tu t'es arrêté·e",
                       badgeLabel: 'suivi',
-                      onTap: () {},
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ChatbotPage()),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Row(
