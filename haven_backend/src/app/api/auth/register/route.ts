@@ -7,7 +7,7 @@ export async function POST(request: Request) {
 
   const schema = z.object({
     email: z.string().email().max(100),
-    password: z.string().min(6).max(100),
+    password: z.string().min(8).max(100),
     name: z.string().min(2).max(50),
     className: z.string().min(1).max(50),
     schoolCode: z.string().min(1).max(50),

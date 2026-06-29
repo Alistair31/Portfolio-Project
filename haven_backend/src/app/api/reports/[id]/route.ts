@@ -1,22 +1,7 @@
 import { db } from '@/lib/db'
 import { z } from 'zod'
-import jwt from 'jsonwebtoken'
 import { applyAnonymity } from '@/lib/anonymize'
-
-// ---------------------------------------------------------------------------
-// Utilitaire partagé : extraire et vérifier le JWT depuis le header
-// Retourne { id, role } ou null si le token est absent/invalide
-// ---------------------------------------------------------------------------
-function extractUser(request: Request): { id: string; role: string } | null {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) return null
-  try {
-    const token = authHeader.split(' ')[1]
-    return jwt.verify(token, process.env.JWT_SECRET!) as { id: string; role: string }
-  } catch {
-    return null
-  }
-}
+import { extractUser } from '@/lib/auth'
 
 // Rôles autorisés à consulter et modifier les signalements
 const STAFF_ROLES = ['TEACHER', 'DIRECTOR_CPE', 'RECTORAT']
@@ -45,16 +30,12 @@ export async function GET(
     })
   }
 
-  // params est une Promise en Next.js 15 : on doit l'awaiter
   const { id } = await params
 
   try {
-    // On récupère le schoolCode du staff connecté pour vérifier qu'il appartient
-    // au même établissement que l'auteur du signalement
-    const staffUser = await db.user.findUnique({
-      where: { id: user.id },
-      select: { schoolCode: true },
-    })
+    const staffUser = user.role !== 'RECTORAT'
+      ? await db.user.findUnique({ where: { id: user.id }, select: { schoolCode: true } })
+      : null
 
     const report = await db.report.findUnique({
       where: { id },
@@ -77,7 +58,6 @@ export async function GET(
             schoolCode: true,
           },
         },
-        // Historique des actions sur ce signalement (changements de statut + notes)
         followUps: {
           select: {
             id:        true,
@@ -93,7 +73,6 @@ export async function GET(
       },
     })
 
-    // Signalement introuvable
     if (!report) {
       return new Response(JSON.stringify({ error: 'Signalement introuvable' }), {
         status: 404,
@@ -101,9 +80,8 @@ export async function GET(
       })
     }
 
-    // Vérification inter-établissement : un prof du lycée A ne peut pas voir
-    // les signalements du lycée B
-    if (report.author.schoolCode !== staffUser?.schoolCode) {
+    const { schoolCode: authorSchoolCode, ...authorForResponse } = report.author
+    if (staffUser && authorSchoolCode !== staffUser.schoolCode) {
       return new Response(JSON.stringify({ error: 'Accès refusé' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' },
@@ -112,7 +90,7 @@ export async function GET(
 
     const safeReport = {
       ...report,
-      author: applyAnonymity(report.author, report.anonymityLevel),
+      author: applyAnonymity(authorForResponse, report.anonymityLevel),
     }
 
     return new Response(JSON.stringify(safeReport), {
@@ -155,7 +133,7 @@ export async function PATCH(
     })
   }
 
-  if (!STAFF_ROLES.includes(user.role)) {
+  if (!STAFF_ROLES.includes(user.role) || user.role === 'RECTORAT') {
     return new Response(JSON.stringify({ error: 'Accès refusé' }), {
       status: 403,
       headers: { 'Content-Type': 'application/json' },
@@ -175,16 +153,15 @@ export async function PATCH(
   const { status, notes } = result.data
 
   try {
-    const staffUser = await db.user.findUnique({
-      where: { id: user.id },
-      select: { schoolCode: true },
-    })
+    const staffUser = user.role !== 'RECTORAT'
+      ? await db.user.findUnique({ where: { id: user.id }, select: { schoolCode: true } })
+      : null
 
-    // Vérifie que le signalement existe et appartient au bon établissement
     const report = await db.report.findUnique({
       where: { id },
       select: {
-        status: true,
+        status:   true,
+        authorId: true,
         author: { select: { schoolCode: true } },
       },
     })
@@ -196,7 +173,7 @@ export async function PATCH(
       })
     }
 
-    if (report.author.schoolCode !== staffUser?.schoolCode) {
+    if (staffUser && report.author.schoolCode !== staffUser.schoolCode) {
       return new Response(JSON.stringify({ error: 'Accès refusé' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' },
@@ -214,6 +191,8 @@ export async function PATCH(
     // Transaction : mise à jour du statut + création du FollowUp en une seule opération atomique.
     // Si l'une échoue, l'autre est annulée — on ne se retrouve jamais avec un statut
     // changé sans entrée d'historique, ni l'inverse.
+    const statusLabel = status === 'IN_PROGRESS' ? 'En cours' : 'Clôturé'
+
     const [updatedReport] = await db.$transaction([
       db.report.update({
         where: { id },
@@ -225,8 +204,14 @@ export async function PATCH(
           reportId:  id,
           staffId:   user.id,
           newStatus: status,
-          // Si notes est absent, on génère un message par défaut lisible
-          notes: notes ?? `Statut changé en ${status === 'IN_PROGRESS' ? 'En cours' : 'Clôturé'}`,
+          notes: notes ?? `Statut changé en ${statusLabel}`,
+        },
+      }),
+      db.notification.create({
+        data: {
+          userId:   report.authorId,
+          reportId: id,
+          message:  `Ton signalement a été mis à jour — statut : ${statusLabel}.`,
         },
       }),
     ])

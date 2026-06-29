@@ -1,19 +1,5 @@
 import { db } from '@/lib/db'
-import jwt from 'jsonwebtoken'
-
-// ---------------------------------------------------------------------------
-// Utilitaire : extraire et vérifier le JWT
-// ---------------------------------------------------------------------------
-function extractUser(request: Request): { id: string; role: string } | null {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) return null
-  try {
-    const token = authHeader.split(' ')[1]
-    return jwt.verify(token, process.env.JWT_SECRET!) as { id: string; role: string }
-  } catch {
-    return null
-  }
-}
+import { extractUser } from '@/lib/auth'
 
 // ---------------------------------------------------------------------------
 // GET /api/reports/mine
@@ -46,6 +32,7 @@ export async function GET(request: Request) {
       },
       select: {
         id:             true,
+        trackingCode:   true,
         type:           true,
         gravity:        true,
         status:         true,       // état actuel du traitement

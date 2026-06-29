@@ -1,8 +1,9 @@
 import { db } from '@/lib/db'
 import { z } from 'zod'
-import jwt from 'jsonwebtoken'
 import { applyAnonymity } from '@/lib/anonymize'
 import { generateTrackingCode } from '@/lib/tracking'
+import { computeIntegrityHash } from '@/lib/integrity'
+import { extractUser } from '@/lib/auth'
 
 const schema = z.object({
   mode:           z.enum(['VICTIM', 'WITNESS']).default('VICTIM'),
@@ -12,17 +13,6 @@ const schema = z.object({
   targetLevel:    z.enum(['TEACHER', 'DIRECTOR_CPE', 'RECTORAT']),
   anonymityLevel: z.enum(['NONE', 'NAME_HIDDEN', 'NAME_AND_CLASS_HIDDEN', 'FULLY_ANONYMOUS']),
 })
-
-function extractUser(request: Request): { id: string; role: string } | null {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) return null
-  try {
-    const token = authHeader.split(' ')[1]
-    return jwt.verify(token, process.env.JWT_SECRET!) as { id: string; role: string }
-  } catch {
-    return null
-  }
-}
 
 export async function POST(request: Request) {
   const user = extractUser(request)
@@ -50,6 +40,11 @@ export async function POST(request: Request) {
   }
 
   try {
+    const author = await db.user.findUnique({
+      where: { id: user.id },
+      select: { schoolCode: true },
+    })
+
     const trackingCode = await generateTrackingCode()
 
     const report = await db.report.create({
@@ -60,7 +55,29 @@ export async function POST(request: Request) {
       },
     })
 
-    return new Response(JSON.stringify({ success: true, id: report.id, trackingCode: report.trackingCode }), {
+    const integrityHash = computeIntegrityHash(report)
+    await db.report.update({
+      where: { id: report.id },
+      data:  { integrityHash },
+    })
+
+    // Notifie tous les membres du staff ciblés (même rôle, même école)
+    // Erreur non-bloquante : la soumission réussit même si les notifs échouent
+    db.user.findMany({
+      where: { role: result.data.targetLevel, schoolCode: author?.schoolCode ?? '' },
+      select: { id: true },
+    }).then((staffList) => {
+      if (staffList.length === 0) return
+      return db.notification.createMany({
+        data: staffList.map((s) => ({
+          userId:   s.id,
+          reportId: report.id,
+          message:  `Nouveau signalement reçu — gravité ${report.gravity}/5.`,
+        })),
+      })
+    }).catch((err) => console.error('[POST /api/reports] notification error', err))
+
+    return new Response(JSON.stringify({ success: true, id: report.id, trackingCode: report.trackingCode, integrityHash }), {
       status: 201,
       headers: { 'Content-Type': 'application/json' },
     })
@@ -107,15 +124,16 @@ export async function GET(request: Request) {
   const codeFilter    = codeParam?.trim() || undefined
 
   try {
-    const staffUser = await db.user.findUnique({
-      where: { id: user.id },
-      select: { schoolCode: true },
-    })
+    // Le Rectorat voit tous les signalements qui lui sont destinés, toutes écoles confondues.
+    // Les autres rôles sont limités à leur propre établissement.
+    const staffUser = user.role !== 'RECTORAT'
+      ? await db.user.findUnique({ where: { id: user.id }, select: { schoolCode: true } })
+      : null
 
     const reports = await db.report.findMany({
       where: {
-        targetLevel:  user.role as 'TEACHER' | 'DIRECTOR_CPE' | 'RECTORAT',
-        author:       { schoolCode: staffUser?.schoolCode ?? '' },
+        targetLevel: user.role as 'TEACHER' | 'DIRECTOR_CPE' | 'RECTORAT',
+        ...(staffUser && { author: { schoolCode: staffUser.schoolCode } }),
         // Filtres optionnels — undefined = Prisma ignore le champ
         ...(statusFilter  && { status:       statusFilter }),
         ...(typeFilter    && { type:         typeFilter }),
