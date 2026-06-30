@@ -183,6 +183,8 @@ class _RegisterPageState extends State<RegisterPage> {
                           icon: Icons.mail_outline,
                           hintText: 'Ex : contact@havenlabs.fr',
                           controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          autocorrect: false,
                         ),
                         const SizedBox(height: 20),
                         IntrinsicHeight(

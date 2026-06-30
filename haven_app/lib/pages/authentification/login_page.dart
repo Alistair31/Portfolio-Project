@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:haven_app/pages/admin/admin_page.dart';
+import 'package:haven_app/pages/parent/parent_home_page.dart';
 import 'package:haven_app/pages/staff/staff_home_page.dart';
 import 'package:haven_app/pages/student/student_home_page.dart';
 import 'package:haven_app/services/preferences.dart';
@@ -40,9 +42,11 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
       SessionService().setToken(response.token);
+      SessionService().setRefreshToken(response.refreshToken);
       SessionService().setUser(role: response.user.role, name: response.user.name);
       if (_checkbox) {
         await PreferencesService().saveToken(response.token);
+        await PreferencesService().saveRefreshToken(response.refreshToken);
       }
       if (!mounted) return;
       final onboardWait = await PreferencesService().hasSeenOnboarding();
@@ -69,6 +73,10 @@ class _LoginPageState extends State<LoginPage> {
           case 'RECTORAT':
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (_) => const StaffHomePage()),
+            );
+          case 'PARENT':
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const ParentHomePage()),
             );
           default:
             ScaffoldMessenger.of(context).showSnackBar(
@@ -140,6 +148,7 @@ class _LoginPageState extends State<LoginPage> {
                             icon: Icons.mail_outline,
                             hintText: 'Ex : test@haven.fr',
                             keyboardType: TextInputType.emailAddress,
+                            autocorrect: false,
                           ),
                           const SizedBox(height: 18),
                           AuthTextField(
@@ -191,6 +200,15 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 18),
                           _buildSignUpRow(),
                           const SizedBox(height: 4),
+                          Center(
+                            child: TextButton(
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const AdminPage()),
+                              ),
+                              child: const Text('Admin',
+                                style: TextStyle(fontSize: 11, color: AppColors.edward)),
+                            ),
+                          ),
                         ],
                       ),
                     ),
