@@ -30,7 +30,7 @@ export async function POST(request: Request) {
   const body = await request.json()
   const result = moodSchema.safeParse(body)
   if (!result.success) {
-    return new Response(JSON.stringify({ error: result.error.issues }), {
+    return new Response(JSON.stringify({ error: result.error.issues[0]?.message ?? 'Données invalides.' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     })

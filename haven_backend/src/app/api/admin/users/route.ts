@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
+import { timingSafeEqual } from 'crypto'
 
 // ---------------------------------------------------------------------------
 // Validation du body
@@ -22,11 +23,14 @@ const schema = z.object({
 // ---------------------------------------------------------------------------
 function isAdmin(request: Request): boolean {
   const authHeader = request.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) return false
+  if (!authHeader?.startsWith('Bearer ') || !process.env.ADMIN_SECRET) return false
 
   const token = authHeader.split(' ')[1]
-  // Comparaison directe : ADMIN_SECRET est une chaîne longue et aléatoire définie dans .env
-  return token === process.env.ADMIN_SECRET
+  // Comparaison à temps constant : évite de révéler le secret via le temps de réponse
+  const tokenBuf  = Buffer.from(token)
+  const secretBuf = Buffer.from(process.env.ADMIN_SECRET)
+  if (tokenBuf.length !== secretBuf.length) return false
+  return timingSafeEqual(tokenBuf, secretBuf)
 }
 
 // ---------------------------------------------------------------------------
@@ -46,7 +50,7 @@ export async function POST(request: Request) {
   const body = await request.json()
   const result = schema.safeParse(body)
   if (!result.success) {
-    return new Response(JSON.stringify({ error: result.error.issues }), {
+    return new Response(JSON.stringify({ error: result.error.issues[0]?.message ?? 'Données invalides.' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     })

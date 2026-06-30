@@ -1,9 +1,15 @@
 import { db } from '@/lib/db'
+import { timingSafeEqual } from 'crypto'
 
 function isAdmin(request: Request): boolean {
   const authHeader = request.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ')) return false
-  return authHeader.split(' ')[1] === process.env.ADMIN_SECRET
+  if (!authHeader?.startsWith('Bearer ') || !process.env.ADMIN_SECRET) return false
+
+  const token = authHeader.split(' ')[1]
+  const tokenBuf  = Buffer.from(token)
+  const secretBuf = Buffer.from(process.env.ADMIN_SECRET)
+  if (tokenBuf.length !== secretBuf.length) return false
+  return timingSafeEqual(tokenBuf, secretBuf)
 }
 
 // GET /api/admin/deletion-requests — liste les demandes en attente

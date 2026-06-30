@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   const body = await request.json()
   const result = schema.safeParse(body)
   if (!result.success) {
-    return new Response(JSON.stringify({ error: result.error.issues }), {
+    return new Response(JSON.stringify({ error: result.error.issues[0]?.message ?? 'Données invalides.' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     })
@@ -146,7 +146,8 @@ export async function GET(request: Request) {
         mode:           true,
         type:           true,
         gravity:        true,
-        description:    true,
+        // description retiré : ce champ (jusqu'à 1000 caractères de contenu sensible)
+        // n'est exposé que dans le détail GET /api/reports/[id], pas dans la liste.
         targetLevel:    true,
         anonymityLevel: true,
         status:         true,

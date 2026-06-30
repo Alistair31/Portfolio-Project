@@ -88,6 +88,15 @@ export async function GET(
       })
     }
 
+    // Le signalement doit être destiné au rôle de l'agent qui le consulte —
+    // un TEACHER ne doit pas lire un signalement adressé au DIRECTOR_CPE, etc.
+    if (report.targetLevel !== user.role) {
+      return new Response(JSON.stringify({ error: 'Accès refusé' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
     const safeReport = {
       ...report,
       author: applyAnonymity(authorForResponse, report.anonymityLevel),
@@ -143,7 +152,7 @@ export async function PATCH(
   const body = await request.json()
   const result = patchSchema.safeParse(body)
   if (!result.success) {
-    return new Response(JSON.stringify({ error: result.error.issues }), {
+    return new Response(JSON.stringify({ error: result.error.issues[0]?.message ?? 'Données invalides.' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
     })
@@ -160,8 +169,9 @@ export async function PATCH(
     const report = await db.report.findUnique({
       where: { id },
       select: {
-        status:   true,
-        authorId: true,
+        status:      true,
+        authorId:    true,
+        targetLevel: true,
         author: { select: { schoolCode: true } },
       },
     })
@@ -174,6 +184,15 @@ export async function PATCH(
     }
 
     if (staffUser && report.author.schoolCode !== staffUser.schoolCode) {
+      return new Response(JSON.stringify({ error: 'Accès refusé' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Le signalement doit être destiné au rôle de l'agent — un TEACHER ne peut pas
+    // modifier le statut d'un signalement adressé au DIRECTOR_CPE, et inversement.
+    if (report.targetLevel !== user.role) {
       return new Response(JSON.stringify({ error: 'Accès refusé' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' },

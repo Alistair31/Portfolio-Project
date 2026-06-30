@@ -2,6 +2,13 @@ import { z } from "zod"
 import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
 
+function generateParentCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = 'HVN-P-'
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)]
+  return code
+}
+
 export async function POST(request: Request) {
   const body = await request.json()
 
@@ -15,7 +22,7 @@ export async function POST(request: Request) {
 
   const result = schema.safeParse(body)
   if (!result.success) {
-    return new Response(JSON.stringify({ error: result.error.issues }), {
+    return new Response(JSON.stringify({ error: result.error.issues[0]?.message ?? 'Données invalides.' }), {
       status: 400,
       headers: { "Content-Type": "application/json" },
     })
@@ -36,8 +43,12 @@ export async function POST(request: Request) {
     const hashedPassword = await bcrypt.hash(password, 10)
     const existingUser = await db.user.findUnique({ where: { email } })
     if (!existingUser) {
+      let parentCode = generateParentCode()
+      while (await db.user.findUnique({ where: { parentCode } })) {
+        parentCode = generateParentCode()
+      }
       await db.user.create({
-        data: { email, passwordHash: hashedPassword, name, className, schoolCode, role: "STUDENT" },
+        data: { email, passwordHash: hashedPassword, name, className, schoolCode, role: "STUDENT", parentCode },
       })
     }
     return new Response(
