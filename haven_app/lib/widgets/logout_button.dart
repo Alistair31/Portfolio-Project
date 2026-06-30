@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../pages/authentification/login_page.dart';
+import '../services/api_service.dart';
 import '../services/preferences.dart';
 import '../services/session_service.dart';
 import '../theme/app_colors.dart';
@@ -10,11 +11,7 @@ class LogoutButton extends StatelessWidget{
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: FractionallySizedBox(
-        widthFactor: 0.6,
-        child: Material(
-      
+    return Material(
       color: AppColors.buttonDark,
       borderRadius: BorderRadius.circular(40),
       child: InkWell(
@@ -22,8 +19,10 @@ class LogoutButton extends StatelessWidget{
         borderRadius: BorderRadius.circular(40),
         child: Container(
           height: 46,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
           alignment: Alignment.center,
           child: Row(
+            mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(
@@ -44,14 +43,23 @@ class LogoutButton extends StatelessWidget{
           ),
         ),
       ),
-        ),
-      ),
     );
   }
 
   Future<void> _logout(BuildContext context) async {
+    final refreshToken = SessionService().getRefreshToken();
+
     SessionService().clearToken();
     await PreferencesService().removeToken();
+    await PreferencesService().removeRefreshToken();
+
+    // Révocation côté serveur en best-effort : si le réseau est indisponible,
+    // on ne bloque pas la déconnexion locale pour autant.
+    if (refreshToken != null) {
+      try {
+        await ApiService().logout(refreshToken);
+      } catch (_) {}
+    }
 
     if (!context.mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
