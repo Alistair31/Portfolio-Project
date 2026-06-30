@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
+import { rateLimit, rateLimitKey } from "@/lib/rateLimit"
 
 function generateParentCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -9,7 +10,20 @@ function generateParentCode(): string {
   return code
 }
 
+// 10 créations / heure / IP : limite le spam de comptes sans gêner une classe
+// entière qui s'inscrit depuis le même établissement (NAT/Wi-Fi partagé).
+const REGISTER_LIMIT = 10
+const REGISTER_WINDOW_MS = 60 * 60 * 1000
+
 export async function POST(request: Request) {
+  const { allowed, retryAfterSeconds } = rateLimit(rateLimitKey(request, "register"), REGISTER_LIMIT, REGISTER_WINDOW_MS)
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ error: `Trop de tentatives. Réessaie dans ${retryAfterSeconds}s.` }),
+      { status: 429, headers: { "Content-Type": "application/json", "Retry-After": String(retryAfterSeconds) } }
+    )
+  }
+
   const body = await request.json()
 
   const schema = z.object({

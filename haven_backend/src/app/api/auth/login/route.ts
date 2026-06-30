@@ -1,11 +1,25 @@
 import { z } from "zod"
 import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
-import jwt from "jsonwebtoken"
+import { rateLimit, rateLimitKey } from "@/lib/rateLimit"
+import { signAccessToken, generateRefreshToken } from "@/lib/auth"
 
 const DUMMY_HASH = "$2b$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ012345"
 
+// 5 tentatives / 15 min / IP : assez large pour un utilisateur qui se trompe,
+// assez strict pour ralentir un brute-force sur un mot de passe.
+const LOGIN_LIMIT = 5
+const LOGIN_WINDOW_MS = 15 * 60 * 1000
+
 export async function POST(request: Request) {
+  const { allowed, retryAfterSeconds } = rateLimit(rateLimitKey(request, "login"), LOGIN_LIMIT, LOGIN_WINDOW_MS)
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ error: `Trop de tentatives. Réessaie dans ${retryAfterSeconds}s.` }),
+      { status: 429, headers: { "Content-Type": "application/json", "Retry-After": String(retryAfterSeconds) } }
+    )
+  }
+
   const body = await request.json()
   const schema = z.object({
     email: z.string().email().max(100),
@@ -36,14 +50,15 @@ export async function POST(request: Request) {
       })
     }
 
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      process.env.JWT_SECRET!,
-      { expiresIn: "7d" }
-    )
+    const token = signAccessToken({ id: user.id, role: user.role })
+
+    const { token: refreshToken, hash, expiresAt } = generateRefreshToken()
+    await db.refreshToken.create({
+      data: { userId: user.id, tokenHash: hash, expiresAt },
+    })
 
     return new Response(
-      JSON.stringify({ token, user: { id: user.id, name: user.name, role: user.role } }),
+      JSON.stringify({ token, refreshToken, user: { id: user.id, name: user.name, role: user.role } }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     )
   } catch (error) {

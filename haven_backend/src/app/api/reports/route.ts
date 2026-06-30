@@ -4,6 +4,7 @@ import { applyAnonymity } from '@/lib/anonymize'
 import { generateTrackingCode } from '@/lib/tracking'
 import { computeIntegrityHash } from '@/lib/integrity'
 import { extractUser } from '@/lib/auth'
+import { sendPushToUsers } from '@/lib/push'
 
 const schema = z.object({
   mode:           z.enum(['VICTIM', 'WITNESS']).default('VICTIM'),
@@ -66,15 +67,17 @@ export async function POST(request: Request) {
     db.user.findMany({
       where: { role: result.data.targetLevel, schoolCode: author?.schoolCode ?? '' },
       select: { id: true },
-    }).then((staffList) => {
+    }).then(async (staffList) => {
       if (staffList.length === 0) return
-      return db.notification.createMany({
+      const message = `Nouveau signalement reçu — gravité ${report.gravity}/5.`
+      await db.notification.createMany({
         data: staffList.map((s) => ({
           userId:   s.id,
           reportId: report.id,
-          message:  `Nouveau signalement reçu — gravité ${report.gravity}/5.`,
+          message,
         })),
       })
+      await sendPushToUsers(staffList.map((s) => s.id), 'Nouveau signalement', message)
     }).catch((err) => console.error('[POST /api/reports] notification error', err))
 
     return new Response(JSON.stringify({ success: true, id: report.id, trackingCode: report.trackingCode, integrityHash }), {

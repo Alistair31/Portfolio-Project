@@ -2,6 +2,7 @@ import { db } from '@/lib/db'
 import { z } from 'zod'
 import { applyAnonymity } from '@/lib/anonymize'
 import { extractUser } from '@/lib/auth'
+import { sendPushToUsers } from '@/lib/push'
 
 // Rôles autorisés à consulter et modifier les signalements
 const STAFF_ROLES = ['TEACHER', 'DIRECTOR_CPE', 'RECTORAT']
@@ -234,6 +235,12 @@ export async function PATCH(
         },
       }),
     ])
+
+    sendPushToUsers(
+      [report.authorId],
+      'Signalement mis à jour',
+      `Ton signalement a été mis à jour — statut : ${statusLabel}.`
+    ).catch((err) => console.error('[PATCH /api/reports/:id] push error', err))
 
     return new Response(JSON.stringify({ success: true, report: updatedReport }), {
       status: 200,

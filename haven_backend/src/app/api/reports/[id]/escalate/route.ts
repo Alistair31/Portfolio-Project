@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
 import { extractUser } from '@/lib/auth'
+import { sendPushToUsers } from '@/lib/push'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -100,15 +101,17 @@ export async function POST(
     db.user.findMany({
       where: { role: 'RECTORAT', schoolCode: staffUser?.schoolCode ?? '' },
       select: { id: true },
-    }).then((rectoratUsers) => {
+    }).then(async (rectoratUsers) => {
       if (rectoratUsers.length === 0) return
-      return db.notification.createMany({
+      const message = 'Un signalement vous a été transféré par un membre du staff.'
+      await db.notification.createMany({
         data: rectoratUsers.map((r) => ({
           userId:   r.id,
           reportId: id,
-          message:  'Un signalement vous a été transféré par un membre du staff.',
+          message,
         })),
       })
+      await sendPushToUsers(rectoratUsers.map((r) => r.id), 'Signalement transféré', message)
     }).catch((err) => console.error('[POST /api/reports/:id/escalate] notification error', err))
 
     // Notifie l'élève auteur
@@ -118,7 +121,8 @@ export async function POST(
         reportId: id,
         message:  'Ton signalement a été transmis au Rectorat.',
       },
-    }).catch((err) => console.error('[POST /api/reports/:id/escalate] author notification error', err))
+    }).then(() => sendPushToUsers([report.authorId], 'Signalement transféré', 'Ton signalement a été transmis au Rectorat.'))
+      .catch((err) => console.error('[POST /api/reports/:id/escalate] author notification error', err))
 
     return new Response(
       JSON.stringify({ success: true }),
