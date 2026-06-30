@@ -25,10 +25,18 @@ class AuthUser {
 
 class AuthResponse {
   final String token;
+  final String refreshToken;
   final AuthUser user;
 
-  AuthResponse({required this.token, required this.user});
+  AuthResponse({required this.token, required this.refreshToken, required this.user});
 
+}
+
+class TokenPair {
+  final String token;
+  final String refreshToken;
+
+  TokenPair({required this.token, required this.refreshToken});
 }
 
 class ApiService {
@@ -47,11 +55,38 @@ class ApiService {
           name: data['user']['name'],
           role: data['user']['role'],
         );
-        return AuthResponse(token: data['token'], user: user);
+        return AuthResponse(token: data['token'], refreshToken: data['refreshToken'], user: user);
       } else {
         final error = jsonDecode(response.body);
         throw Exception(error['error']);
       }
+    }
+
+    // Échange le refresh token contre un nouveau couple access+refresh.
+    // NB : aucun appel de ce fichier ne déclenche encore ce rafraîchissement
+    // automatiquement sur une réponse 401 — il n'y a pas de client HTTP
+    // centralisé ici, chaque méthode fait son propre http.get/post avec le
+    // token courant. Cette méthode existe et fonctionne, mais reste à câbler
+    // manuellement (ou via un futur client HTTP commun) partout où un appel
+    // peut échouer avec un token expiré.
+    Future<TokenPair?> refreshAccessToken(String refreshToken) async {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refreshToken': refreshToken}),
+      );
+
+      if (response.statusCode != 200) return null;
+      final data = jsonDecode(response.body);
+      return TokenPair(token: data['token'], refreshToken: data['refreshToken']);
+    }
+
+    Future<void> logout(String refreshToken) async {
+      await http.post(
+        Uri.parse('$baseUrl/auth/logout'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'refreshToken': refreshToken}),
+      );
     }
 
     Future<String> register(String email, String password, String name, String className, String schoolCode) async { 
@@ -294,6 +329,74 @@ class ApiService {
         Uri.parse('$baseUrl/notifications'),
         headers: {'Authorization': 'Bearer $token'},
       );
+    }
+
+    Future<String?> getParentCode({required String token}) async {
+      final response = await http.get(
+        Uri.parse('$baseUrl/student/parent-code'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        return (jsonDecode(response.body) as Map<String, dynamic>)['parentCode'] as String?;
+      }
+      return null;
+    }
+
+    Future<void> registerParent({
+      required String email,
+      required String password,
+      required String name,
+      required String parentCode,
+    }) async {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/register/parent'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'password': password, 'name': name, 'parentCode': parentCode}),
+      );
+      if (response.statusCode != 201) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['error'] ?? 'Erreur lors de l\'inscription');
+      }
+    }
+
+    Future<List<Map<String, dynamic>>> getParentReports({required String token}) async {
+      final response = await http.get(
+        Uri.parse('$baseUrl/parent/reports'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        return (jsonDecode(response.body) as List).cast<Map<String, dynamic>>();
+      }
+      throw Exception('Erreur chargement');
+    }
+
+    Future<Map<String, dynamic>> getParentReportDetail({required String token, required String id}) async {
+      final response = await http.get(
+        Uri.parse('$baseUrl/parent/reports/$id'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) return jsonDecode(response.body) as Map<String, dynamic>;
+      throw Exception('Accès refusé');
+    }
+
+    Future<List<Map<String, dynamic>>> getAdminDeletionRequests({required String secret}) async {
+      final response = await http.get(
+        Uri.parse('$baseUrl/admin/deletion-requests'),
+        headers: {'Authorization': 'Bearer $secret'},
+      );
+      if (response.statusCode == 200) {
+        return (jsonDecode(response.body) as List).cast<Map<String, dynamic>>();
+      }
+      throw Exception('Secret invalide');
+    }
+
+    Future<void> processAdminDeletion({required String secret, required String id, required String action}) async {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/admin/deletion-requests/$id'),
+        headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $secret'},
+        body: jsonEncode({'action': action}),
+      );
+      if (response.statusCode != 200) throw Exception('Erreur');
     }
 
     Future<void> saveFcmToken({

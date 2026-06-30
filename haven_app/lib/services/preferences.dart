@@ -34,6 +34,24 @@ class PreferencesService {
     byebye.remove('token');
   }
 
+  Future<void> saveRefreshToken(String refreshToken) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    prefs.setString('refreshToken', refreshToken);
+  }
+
+  Future<String?> getRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    return prefs.getString('refreshToken');
+  }
+
+  Future<void> removeRefreshToken() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    prefs.remove('refreshToken');
+  }
+
   Future<void> saveIntegrityHash(String reportId, String hash) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('integrity_$reportId', hash);

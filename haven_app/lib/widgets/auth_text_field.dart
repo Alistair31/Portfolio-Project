@@ -9,6 +9,7 @@ class AuthTextField extends StatelessWidget {
   final IconData? icon;
   final String? hintText;
   final bool obscureText;
+  final bool autocorrect;
   final TextEditingController? controller;
   final TextInputType? keyboardType;
   final Widget? suffix;
@@ -19,6 +20,7 @@ class AuthTextField extends StatelessWidget {
     this.icon,
     this.hintText,
     this.obscureText = false,
+    this.autocorrect = true,
     this.controller,
     this.keyboardType,
     this.suffix,
@@ -54,6 +56,7 @@ class AuthTextField extends StatelessWidget {
           child: TextField(
             controller: controller,
             obscureText: obscureText,
+            autocorrect: autocorrect,
             keyboardType: keyboardType,
             cursorColor: AppColors.textDark,
             cursorWidth: 2,
