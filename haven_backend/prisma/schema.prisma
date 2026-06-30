@@ -13,6 +13,7 @@ datasource db {
 
 enum Role {
   STUDENT
+  PARENT
   TEACHER
   DIRECTOR_CPE
   RECTORAT
@@ -59,6 +60,7 @@ model User {
   schoolCode   String
   role         Role
   fcmToken     String?
+  parentCode   String?  @unique
   createdAt    DateTime @default(now())
 
   reports          Report[]
@@ -66,6 +68,20 @@ model User {
   notifications    Notification[]
   moods            Mood[]
   deletionRequests AccountDeletionRequest[]
+  parentLinks      ParentStudentLink[] @relation("ParentUser")
+  studentLinks     ParentStudentLink[] @relation("StudentUser")
+}
+
+model ParentStudentLink {
+  id        String   @id @default(cuid())
+  parentId  String
+  studentId String
+  createdAt DateTime @default(now())
+
+  parent  User @relation("ParentUser",  fields: [parentId],  references: [id], onDelete: Cascade)
+  student User @relation("StudentUser", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, studentId])
 }
 
 model AccountDeletionRequest {
@@ -93,7 +109,7 @@ model Report {
   updatedAt      DateTime       @updatedAt
   authorId       String
 
-  author        User           @relation(fields: [authorId], references: [id])
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   followUps     FollowUp[]
   notifications Notification[]
 }
@@ -106,8 +122,8 @@ model FollowUp {
   reportId  String
   staffId   String
 
-  report Report @relation(fields: [reportId], references: [id])
-  staff  User   @relation(fields: [staffId], references: [id])
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  staff  User   @relation(fields: [staffId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
@@ -118,8 +134,8 @@ model Notification {
   userId   String
   reportId String
 
-  user   User   @relation(fields: [userId], references: [id])
-  report Report @relation(fields: [reportId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
 }
 
 enum SchoolType {
@@ -135,7 +151,7 @@ model Mood {
   createdAt DateTime @default(now())
   userId    String
 
-  user User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model School {
