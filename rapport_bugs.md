@@ -218,3 +218,38 @@
 - `saveToken()` conditionné à `_checkbox` dans `_handleLogin()`
 - Widget `LogoutButton` créé (`haven_app/lib/widgets/logout_button.dart`) : supprime le token via `PreferencesService().removeToken()` et redirige vers `LoginPage` en vidant la pile
 - Consentement RGPD ajouté à l'inscription : checkbox obligatoire + lien vers `PrivacyPolicyPage`
+
+---
+
+### Bug #21 — `HavenStart` auto-login cassé ✅ RÉSOLU
+
+**Fichier :** `haven_app/lib/pages/splashscreen/HavenStart.dart`
+**Sévérité :** CRITICAL | **Confiance :** 10/10
+**Description :** `_goToLogin()` chargeait le token depuis `SharedPreferences` via `PreferencesService().getToken()` mais ne le transmettait jamais à `SessionService`. Le rôle et le nom n'étaient pas stockés en préférences au moment du login, donc non restituables au redémarrage. La méthode routait systématiquement vers `StudentHomePage` quel que soit le rôle de l'utilisateur.
+**Impact :** "Rester connecté" était visuellement présent mais totalement non fonctionnel — l'app redémarrait toujours sur la page de login. Un staff loggé en `TEACHER` ou `DIRECTOR_CPE` était renvoyé sur la vue student.
+**Correction appliquée :**
+
+- `preferences.dart` : ajout de `saveRole`, `getRole`, `removeRole`, `saveName`, `getName`, `removeName`
+- `login_page.dart` : appel de `saveRole()` et `saveName()` dans `_handleLogin()` quand `_checkbox` est coché
+- `HavenStart.dart` : réécriture de `_goToLogin()` en méthode `async` — charge token + rôle + nom, peuple `SessionService`, route par rôle via `switch`
+- `logout_button.dart` + `account_page.dart` : ajout de `removeRole()` et `removeName()` au logout pour purger complètement les préférences
+
+---
+
+### Bug #22 — `submitReport()` ne retournait pas `trackingCode` ✅ RÉSOLU
+
+**Fichier :** `haven_app/lib/services/api_service.dart`
+**Sévérité :** HIGH | **Confiance :** 10/10
+**Description :** Le backend `POST /api/reports` retourne `{ success, id, trackingCode, integrityHash }`. La méthode `submitReport()` n'extrayait que `id` et `integrityHash` dans son `Map<String, String>` de retour — le champ `trackingCode` était silencieusement ignoré.
+**Impact :** Le dialog de confirmation post-soumission affichait un tracking code vide, rendant le suivi de dossier impossible pour l'élève côté Flutter. Les données étaient correctement enregistrées en base mais inaccessibles dans l'UI.
+**Correction appliquée :** Ajout de `'trackingCode': data['trackingCode'] as String` dans le `Map<String, String>` retourné par `submitReport()`.
+
+---
+
+### Bug #23 — `lookupTrackingCode()` — méthode morte sans endpoint backend ✅ RÉSOLU
+
+**Fichier :** `haven_app/lib/services/api_service.dart`
+**Sévérité :** LOW | **Confiance :** 10/10
+**Description :** `lookupTrackingCode(String code)` appelait `GET /api/reports/track?code=...` — une route qui n'existe pas côté backend et n'a jamais existé. La méthode n'était appelée nulle part dans l'app Flutter.
+**Impact :** Aucun impact utilisateur direct. Risque de maintenance : confusion sur l'API disponible, potentiel appel accidentel futur retournant un 404.
+**Correction appliquée :** Suppression complète de la méthode `lookupTrackingCode` de `api_service.dart`.
