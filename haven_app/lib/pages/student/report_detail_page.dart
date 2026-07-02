@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 import '../../services/preferences.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
+import 'exchange_page.dart';
 
 /// Détail d'un signalement élève — infos, description, timeline des follow-ups,
 /// et bouton d'annulation si le signalement est annulable (PENDING < 5 min).
@@ -388,6 +389,26 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
                 dateLabel:       _formatShort(f['createdAt'] as String),
               );
             }),
+
+          // Bouton échange avec le staff
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ExchangePage(reportId: widget.reportId),
+              ),
+            ),
+            icon: const Icon(Icons.chat_bubble_outline, size: 18),
+            label: const Text('Parler à l\'équipe'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.eucalyptus,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              minimumSize: const Size.fromHeight(50),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            ),
+          ),
 
           // Bouton annulation
           if (_canCancel) ...[

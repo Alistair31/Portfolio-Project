@@ -4,7 +4,9 @@ import '../../services/api_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/logout_button.dart';
+import 'rectorat_page.dart';
 import 'staff_report_detail_page.dart';
+import 'staff_stats_page.dart';
 
 class StaffHomePage extends StatefulWidget {
   const StaffHomePage({super.key});
@@ -129,7 +131,43 @@ class _StaffHomePageState extends State<StaffHomePage> {
                             const LogoutButton(),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
+                        // Raccourcis Stats / Vue académique
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _QuickLink(
+                                icon: Icons.bar_chart_outlined,
+                                label: 'Statistiques',
+                                onTap: () => Navigator.of(context).push(
+                                  MaterialPageRoute(builder: (_) => Scaffold(
+                                    appBar: AppBar(
+                                      title: const Text('Statistiques'),
+                                      backgroundColor: AppColors.backgroundTop,
+                                      foregroundColor: AppColors.racingGreen,
+                                      elevation: 0,
+                                    ),
+                                    backgroundColor: AppColors.backgroundBottom,
+                                    body: const StaffStatsPage(),
+                                  )),
+                                ),
+                              ),
+                            ),
+                            if (role == 'RECTORAT') ...[
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _QuickLink(
+                                  icon: Icons.account_balance_outlined,
+                                  label: 'Vue académique',
+                                  onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => const RectoratPage()),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 16),
                         // Filtres par statut
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
@@ -287,6 +325,44 @@ class _StaffHomePageState extends State<StaffHomePage> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickLink extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  const _QuickLink({required this.icon, required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.hairline),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: AppColors.eucalyptus),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.racingGreen,
+              ),
+            ),
+          ],
         ),
       ),
     );

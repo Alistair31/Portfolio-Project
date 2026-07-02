@@ -10,6 +10,7 @@ import '../../widgets/talk_hero_card.dart';
 import '../chatbot/chatbot_page.dart';
 import '../report/report_target_page.dart';
 import 'account_page.dart';
+import 'safe_space_page.dart';
 import 'suivi_page.dart';
 
 /// Écran 3 · Espace élève — « Accueil connecté ».
@@ -99,16 +100,20 @@ class _StudentHomePageState extends State<StudentHomePage> {
                             icon: Icons.access_time_outlined,
                             title: 'Mes signalements',
                             subtitle: '1 en cours',
-                            onTap: () {},
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const SuiviPage()),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: ActionMiniCard(
                             icon: Icons.bookmark_border,
-                            title: 'Ressources',
-                            subtitle: 'Comprendre, agir',
-                            onTap: () {},
+                            title: 'Espace Safe',
+                            subtitle: 'Ressources & droits',
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => const SafeSpacePage()),
+                            ),
                           ),
                         ),
                       ],

@@ -4,7 +4,7 @@ import '../../theme/app_colors.dart';
 import '../../widgets/green_cta_button.dart';
 import '../../widgets/selectable_option_card.dart';
 import '../../widgets/step_header.dart';
-import 'report_page.dart';
+import 'report_who_page.dart';
 
 /// Écran 4 · Signaler — « Tu signales pour... » (étape 1 / 3).
 /// L'utilisateur·rice indique si la situation le/la concerne directement
@@ -78,7 +78,7 @@ class _ReportTargetPageState extends State<ReportTargetPage> {
                   trailingIcon: Icons.arrow_forward,
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => ReportPage(
+                      builder: (_) => ReportWhoPage(
                         mode: _selected == 0 ? 'VICTIM' : 'WITNESS',
                       ),
                     ),

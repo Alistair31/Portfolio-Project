@@ -20,6 +20,9 @@ class _AccountPageState extends State<AccountPage> {
   Future<void> _logout() async {
     SessionService().clearToken();
     await PreferencesService().removeToken();
+    await PreferencesService().removeRefreshToken();
+    await PreferencesService().removeRole();
+    await PreferencesService().removeName();
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginPage()),

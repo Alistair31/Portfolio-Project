@@ -1,16 +1,21 @@
 import 'package:flutter/material.dart';
-import '../../services/api_service.dart';
-import '../../services/preferences.dart';
-import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
-import '../../widgets/primary_button.dart';
+import '../../widgets/green_cta_button.dart';
+import 'report_summary_page.dart';
 
 class ReportPage extends StatefulWidget {
   final String? initialType;
-  // VICTIM (défaut) ou WITNESS selon le choix de ReportTargetPage
+  final String? initialAnonymity;
+  final String? categoryLabel;
   final String mode;
 
-  const ReportPage({super.key, this.initialType, this.mode = 'VICTIM'});
+  const ReportPage({
+    super.key,
+    this.initialType,
+    this.initialAnonymity,
+    this.categoryLabel,
+    this.mode = 'VICTIM',
+  });
 
   @override
   State<ReportPage> createState() => _ReportPageState();
@@ -23,13 +28,11 @@ class _ReportPageState extends State<ReportPage> {
   int _gravity = 3;
   String? _selectedTarget;
   String? _selectedAnonymity;
-  bool _isSubmitting = false;
-
   @override
   void initState() {
     super.initState();
-    // Pré-sélectionne le type si fourni par le chatbot
     _selectedType = widget.initialType;
+    _selectedAnonymity = widget.initialAnonymity;
   }
 
   static const _types = {
@@ -67,7 +70,7 @@ class _ReportPageState extends State<ReportPage> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
+  void _goToSummary() {
     if (_selectedType == null) {
       _snack('Choisis un type de situation'); return;
     }
@@ -81,58 +84,19 @@ class _ReportPageState extends State<ReportPage> {
       _snack('Description trop courte (10 caractères minimum)'); return;
     }
 
-    final token = SessionService().getToken();
-    if (token == null) {
-      _snack('Session expirée, reconnecte-toi'); return;
-    }
-
-    setState(() => _isSubmitting = true);
-
-    try {
-      final result = await ApiService().submitReport(
-        token: token,
-        mode: widget.mode,
-        type: _selectedType!,
-        gravity: _gravity,
-        description: _descriptionController.text.trim(),
-        targetLevel: _selectedTarget!,
-        anonymityLevel: _selectedAnonymity!,
-      );
-
-      await PreferencesService().saveIntegrityHash(result['id']!, result['integrityHash']!);
-      await PreferencesService().saveReportSnapshot(result['id']!, {
-        'type':           _selectedType,
-        'gravity':        _gravity,
-        'mode':           widget.mode,
-        'anonymityLevel': _selectedAnonymity,
-        'description':    _descriptionController.text.trim(),
-      });
-
-      if (!mounted) return;
-      await showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Signalement envoyé'),
-          content: const Text(
-            'Ton signalement a bien été transmis.\n'
-            'Tu peux suivre son évolution dans l\'onglet Suivi.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('OK'),
-            ),
-          ],
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ReportSummaryPage(
+          mode: widget.mode,
+          type: _selectedType!,
+          categoryLabel: widget.categoryLabel ?? _types[_selectedType!] ?? _selectedType!,
+          anonymityLevel: _selectedAnonymity!,
+          gravity: _gravity,
+          description: _descriptionController.text.trim(),
+          targetLevel: _selectedTarget!,
         ),
-      );
-
-      if (mounted) Navigator.of(context).pop();
-    } catch (e) {
-      if (!mounted) return;
-      _snack(e.toString().replaceFirst('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
-    }
+      ),
+    );
   }
 
   void _snack(String msg) {
@@ -273,10 +237,10 @@ class _ReportPageState extends State<ReportPage> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                child: PrimaryButton(
-                  label: _isSubmitting ? 'Envoi en cours…' : 'Envoyer le signalement',
-                  trailingIcon: Icons.send_outlined,
-                  onPressed: _isSubmitting ? null : _submit,
+                child: GreenCtaButton(
+                  label: 'Vérifier et envoyer',
+                  trailingIcon: Icons.arrow_forward,
+                  onPressed: _goToSummary,
                 ),
               ),
             ],

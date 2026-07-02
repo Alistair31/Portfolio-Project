@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:haven_app/pages/parent/parent_home_page.dart';
+import 'package:haven_app/pages/staff/staff_home_page.dart';
+import 'package:haven_app/pages/student/student_home_page.dart';
 import '../../services/preferences.dart';
-import '../student/student_home_page.dart';
+import '../../services/session_service.dart';
 import '../authentification/login_page.dart';
 
 class HavenScreen extends StatefulWidget {
@@ -17,46 +20,41 @@ class _HavenScreenState extends State<HavenScreen> {
     _goToLogin();
   }
 
-  void _goToLogin() {
-    Future.delayed(const Duration(seconds: 3), () async{
-      final token = await PreferencesService().getToken();
+  Future<void> _goToLogin() async {
+    await Future.delayed(const Duration(seconds: 3));
+    if (!mounted) return;
 
-      if (!mounted) return;
+    final prefs = PreferencesService();
+    final token = await prefs.getToken();
+    final role  = await prefs.getRole();
+    final name  = await prefs.getName();
 
-      if (token != null) {
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const StudentHomePage(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) =>
-                    FadeTransition(
-              opacity: CurvedAnimation(
-                parent: animation,
-              curve: Curves.easeIn),
-              child: child,
-            ),
-          ),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (context, animation, secondaryAnimation) =>
-                const LoginPage(),
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) =>
-                    FadeTransition(
-              opacity: CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeIn),
-              child: child,
-            ),
-          ),
-        );
-      }
-    });
+    if (!mounted) return;
+
+    Widget destination;
+    if (token != null && role != null) {
+      SessionService().setToken(token);
+      SessionService().setUser(role: role, name: name ?? '');
+      destination = switch (role) {
+        'STUDENT'                                  => const StudentHomePage(),
+        'TEACHER' || 'DIRECTOR_CPE' || 'RECTORAT' => const StaffHomePage(),
+        'PARENT'                                   => const ParentHomePage(),
+        _                                          => const LoginPage(),
+      };
+    } else {
+      destination = const LoginPage();
+    }
+
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (_, _, _) => destination,
+        transitionsBuilder: (_, animation, _, child) => FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeIn),
+          child: child,
+        ),
+      ),
+    );
   }
 
   @override

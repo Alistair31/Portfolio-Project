@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:haven_app/pages/admin/admin_page.dart';
 import 'package:haven_app/pages/parent/parent_home_page.dart';
+import 'package:haven_app/pages/parent_portal_page.dart';
 import 'package:haven_app/pages/staff/staff_home_page.dart';
 import 'package:haven_app/pages/student/student_home_page.dart';
 import 'package:haven_app/services/preferences.dart';
@@ -47,6 +48,8 @@ class _LoginPageState extends State<LoginPage> {
       if (_checkbox) {
         await PreferencesService().saveToken(response.token);
         await PreferencesService().saveRefreshToken(response.refreshToken);
+        await PreferencesService().saveRole(response.user.role);
+        await PreferencesService().saveName(response.user.name);
       }
       if (!mounted) return;
       final onboardWait = await PreferencesService().hasSeenOnboarding();
@@ -200,6 +203,17 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 18),
                           _buildSignUpRow(),
                           const SizedBox(height: 4),
+                          Center(
+                            child: TextButton(
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const ParentPortalPage()),
+                              ),
+                              child: const Text(
+                                'Portail parents (code de suivi)',
+                                style: TextStyle(fontSize: 11, color: AppColors.corduroy),
+                              ),
+                            ),
+                          ),
                           Center(
                             child: TextButton(
                               onPressed: () => Navigator.of(context).push(
