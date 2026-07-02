@@ -149,6 +149,7 @@ class ApiService {
       return {
         'id':            data['id'] as String,
         'integrityHash': data['integrityHash'] as String,
+        'trackingCode':  data['trackingCode'] as String,
       };
     }
 
@@ -411,5 +412,31 @@ class ApiService {
         },
         body: jsonEncode({'fcmToken': fcmToken}),
       );
+    }
+
+    Future<Map<String, dynamic>> getStats({required String token}) async {
+      final response = await http.get(
+        Uri.parse('$baseUrl/stats'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+      throw Exception('Impossible de charger les statistiques');
+    }
+
+    Future<List<Map<String, dynamic>>> getTimeline({
+      required String token,
+      required String period,
+    }) async {
+      final response = await http.get(
+        Uri.parse('$baseUrl/stats/timeline?period=$period'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (response.statusCode == 200) {
+        final list = jsonDecode(response.body) as List<dynamic>;
+        return list.cast<Map<String, dynamic>>();
+      }
+      throw Exception('Impossible de charger la timeline');
     }
   }

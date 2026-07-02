@@ -62,6 +62,36 @@ class PreferencesService {
     return prefs.getString('integrity_$reportId');
   }
 
+  Future<void> saveRole(String role) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('role', role);
+  }
+
+  Future<String?> getRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('role');
+  }
+
+  Future<void> removeRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('role');
+  }
+
+  Future<void> saveName(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('name', name);
+  }
+
+  Future<String?> getName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('name');
+  }
+
+  Future<void> removeName() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('name');
+  }
+
   Future<void> saveReportSnapshot(String reportId, Map<String, dynamic> snapshot) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('snapshot_$reportId', jsonEncode(snapshot));
