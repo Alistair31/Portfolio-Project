@@ -52,6 +52,8 @@ class LogoutButton extends StatelessWidget{
     SessionService().clearToken();
     await PreferencesService().removeToken();
     await PreferencesService().removeRefreshToken();
+    await PreferencesService().removeRole();
+    await PreferencesService().removeName();
 
     // Révocation côté serveur en best-effort : si le réseau est indisponible,
     // on ne bloque pas la déconnexion locale pour autant.
