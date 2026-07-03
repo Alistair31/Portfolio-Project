@@ -253,3 +253,13 @@
 **Description :** `lookupTrackingCode(String code)` appelait `GET /api/reports/track?code=...` — une route qui n'existe pas côté backend et n'a jamais existé. La méthode n'était appelée nulle part dans l'app Flutter.
 **Impact :** Aucun impact utilisateur direct. Risque de maintenance : confusion sur l'API disponible, potentiel appel accidentel futur retournant un 404.
 **Correction appliquée :** Suppression complète de la méthode `lookupTrackingCode` de `api_service.dart`.
+
+---
+
+### Bug #24 — Bouton d'annulation visible après expiration de la fenêtre de 5 minutes ✅ RÉSOLU
+
+**Fichier :** `haven_app/lib/pages/student/report_detail_page.dart`
+**Sévérité :** MEDIUM | **Confiance :** 9/10
+**Description :** `_canCancel` est un getter recalculé uniquement lors d'un rebuild (déclenché par `setState` dans `_load`, `_cancel` ou `_checkIntegrity`). Aucune minuterie ne forçait de rebuild à l'instant précis où les 5 minutes s'écoulaient : le bouton "Annuler le signalement" restait affiché indéfiniment tant que l'élève ne provoquait pas un rebuild par une autre interaction.
+**Impact :** Un élève laissant la page ouverte au-delà du délai (ou y revenant plus tard sans qu'un rebuild ait eu lieu) voyait toujours le bouton d'annulation actif. Un appui déclenchait un appel `DELETE /api/reports/mine/[id]` rejeté côté serveur (`409 — Le délai d'annulation de 5 minutes est dépassé.`), une erreur confuse puisque l'UI n'avait rien signalé.
+**Correction appliquée :** Ajout d'un `Timer` (`_cancelExpiry`) programmé dans `_scheduleCancelExpiry()` pour se déclencher exactement à l'expiration de la fenêtre de 5 minutes et forcer un `setState` qui recalcule `_canCancel`, masquant automatiquement le bouton. Le timer est annulé dans `dispose()` pour éviter tout `setState` après démontage du widget.
