@@ -49,10 +49,10 @@
 
 | Member | Role | Responsibilities |
 | --- | --- | --- |
-| Gabriel | Developer — Flutter (Frontend) | UI implementation, widget development, navigation, Flutter services |
-| Alistair | SCM + Developer — Next.js (Backend) | Git branch management, pull request reviews, API endpoints, database migrations |
-| [PM name] | Project Manager | Sprint planning, stand-ups facilitation, progress tracking, deviation management |
-| [QA name] | Quality Assurance | Test plan design, manual testing, bug reporting, acceptance criteria validation |
+| Jarod     | Developer — Flutter (Frontend) | UI implementation, widget development, navigation, Flutter services |
+| Gabriel    | SCM + Developer — Next.js (Backend) | Git branch management, pull request reviews, API endpoints, database migrations |
+| SPITZ Thomas | Project owner/  | HavenLab Director,  |
+| BALLAIS Romain | CTO | Technical reference, |
 
 ---
 
@@ -151,31 +151,31 @@ The project follows a **feature branch** model:
 ```
 main
 └── dev
-    ├── feature/suivi-tab          (Sprint 1 — Gabriel)
-    ├── feature/report-mode        (Sprint 1 — Gabriel)
+    ├── feature/suivi-tab          (Sprint 1 — Jarod)
+    ├── feature/report-mode        (Sprint 1 — Jarod)
     ├── feature/tracking-code      (Sprint 1 — Gabriel)
     ├── feature/staff-view         (Sprint 2 — Gabriel)
-    ├── feature/followup-api       (Sprint 2 — Alistair)
-    └── feature/mood-chart         (Sprint 2 — Gabriel)
+    ├── feature/followup-api       (Sprint 2 — Gabriel)
+    └── feature/mood-chart         (Sprint 2 — Jarod)
 ```
 
-**Rules enforced by SCM (Alistair):**
+**Rules enforced by SCM (Team):**
 
 - All work happens on feature branches — no direct commits to `main` or `dev`.
-- Pull requests are required to merge into `dev`. Alistair reviews each PR before approval.
+- Pull requests are required to merge into `dev`. Both peers reviews each other PR before approval.
 - Merges into `main` happen only at the end of a sprint, after QA validation.
 - Branch names follow the format: `feature/<short-description>` or `fix/<short-description>`.
 
 ### Coding Standards
 
-**Flutter (Gabriel):**
+**Flutter (Jarod):**
 
 - One widget per file; file name matches widget name in `snake_case`.
 - Use `const` constructors wherever possible.
 - Always check `if (!mounted) return;` after `await` in `StatefulWidget`.
 - No hardcoded strings — use the constant maps already established in `report_page.dart`.
 
-**Next.js / TypeScript (Alistair):**
+**Next.js / TypeScript (Gabriel):**
 
 - All handlers follow the existing pattern: `extractUser()` → role check → try/catch → `console.error` on failure.
 - No raw error details exposed in responses (cf. security audit S4).
