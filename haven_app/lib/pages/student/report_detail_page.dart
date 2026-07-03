@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
@@ -24,6 +26,7 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
   // null = pas encore vérifié / pas de hash local, true = intact, false = altéré
   bool? _verified;
   Map<String, dynamic>? _snapshot;
+  Timer? _cancelExpiry;
 
   static const _typeLabels = {
     'PHYSICAL': 'Violence physique',
@@ -97,15 +100,38 @@ class _ReportDetailPageState extends State<ReportDetailPage> {
     _load();
   }
 
+  @override
+  void dispose() {
+    _cancelExpiry?.cancel();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     final token = SessionService().getToken();
     if (token == null) return;
     try {
       final report = await ApiService().getReportDetail(token: token, id: widget.reportId);
-      if (mounted) setState(() { _report = report; _loading = false; });
+      if (mounted) {
+        setState(() { _report = report; _loading = false; });
+        _scheduleCancelExpiry(report);
+      }
       _checkIntegrity(token, report['id'] as String);
     } catch (_) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  // Déclenche un rebuild exactement à l'expiration de la fenêtre de 5 minutes,
+  // pour que le bouton d'annulation disparaisse sans attendre une interaction.
+  void _scheduleCancelExpiry(Map<String, dynamic> report) {
+    _cancelExpiry?.cancel();
+    if (report['status'] != 'PENDING') return;
+    final created = DateTime.parse(report['createdAt'] as String);
+    final remaining = const Duration(minutes: 5) - DateTime.now().difference(created);
+    if (remaining > Duration.zero) {
+      _cancelExpiry = Timer(remaining, () {
+        if (mounted) setState(() {});
+      });
     }
   }
 
@@ -570,9 +596,9 @@ class _InfoCard extends StatelessWidget {
 class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
-  final Widget? trailing;
+  final Widget trailing;
 
-  const _InfoRow({required this.label, required this.value, this.trailing});
+  const _InfoRow({required this.label, required this.value, this.trailing = const SizedBox.shrink()});
 
   @override
   Widget build(BuildContext context) {
@@ -593,7 +619,7 @@ class _InfoRow extends StatelessWidget {
               style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.racingGreen),
             ),
           ),
-          if (trailing != null) trailing!,
+          trailing,
         ],
       ),
     );
