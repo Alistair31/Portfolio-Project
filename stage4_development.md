@@ -90,11 +90,11 @@
 | **Must Have** | Role-based routing on login (staff vs student) | Gabriel ✅ | `POST /api/auth/login` ✅ (role in JWT) |
 | **Must Have** | Staff reports list view (school-filtered, anonymization respected) | Gabriel | `GET /api/reports` ✅ |
 | **Must Have** | Report detail view for staff | Gabriel | `GET /api/reports/[id]` ✅ |
-| **Must Have** | Follow-up creation (status update + notes) | Gabriel + Alistair ✅ | `PATCH /api/reports/[id]` ✅ auto-creates FollowUp |
+| **Must Have** | Follow-up creation (status update + notes) | Jarod ✅ | `PATCH /api/reports/[id]` ✅ auto-creates FollowUp |
 | **Should Have** | Filter reports by status / type / gravity | Gabriel | `GET /api/reports?status=&type=&gravity=&code=` ✅ backend done |
 | **Should Have** | Admin user management screen | Gabriel | `POST /api/admin/users` ✅ |
-| **Should Have** | Academy stats dashboard | Alistair ✅ | `GET /api/stats` ✅ byStatus / byType / byGravity / bySchool |
-| **Could Have** | Mood history chart (7-day view) | Gabriel ✅ | `GET /api/mood` ✅ |
+| **Should Have** | Academy stats dashboard | Jarod ✅ | `GET /api/stats` ✅ byStatus / byType / byGravity / bySchool |
+| **Could Have** | Mood history chart (7-day view) | Jarod ✅ | `GET /api/mood` ✅ |
 | **Won't Have** | Push notifications | — | — |
 
 #### Sprint 3 — Integration, QA & Polish
@@ -102,11 +102,11 @@
 | Priority | Task | Assigned to |
 | --- | --- | --- |
 | **Must Have** | Unit test suite (services, models, widgets) | Gabriel |
-| **Must Have** | Critical bug fixes from Sprint 1 & 2 | Gabriel + Alistair |
+| **Must Have** | Critical bug fixes from Sprint 1 & 2 | Gabriel + Jarod |
 | **Must Have** | Final QA pass on all MVP features | QA |
-| **Should Have** | In-app notification display | Gabriel + Alistair |
-| **Should Have** | Mood history chart (if not completed in Sprint 2) | Gabriel |
-| **Could Have** | FCM push notifications | Alistair |
+| **Should Have** | In-app notification display | Jarod |
+| **Should Have** | Mood history chart (if not completed in Sprint 2) | Jarod |
+| **Could Have** | FCM push notifications | Jarod |
 | **Won't Have** | Analytics dashboard | — |
 | **Won't Have** | Dark mode | — |
 
@@ -393,6 +393,14 @@ At the end of each sprint, the team demonstrates completed features to stakehold
 - Write the API contract before implementing any endpoint, not after.
 - Add a CI step that runs `flutter test` on every pull request from Sprint 1 onward.
 - Plan the notification UI earlier so backend and frontend land in the same sprint.
+
+---
+
+### Post-Sprint 3 — Maintenance Fixes
+
+| Bug | File | Fix |
+| --- | --- | --- |
+| Bug #24 — Cancel button stayed visible past the 5-minute window | `report_detail_page.dart` | Added a `Timer` (`_scheduleCancelExpiry`) that triggers a rebuild exactly when the window expires, hiding the button automatically; cancelled in `dispose()` to avoid `setState` after unmount. See `rapport_bugs.md`. |
 
 ---
 
