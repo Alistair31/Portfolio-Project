@@ -263,3 +263,32 @@
 **Description :** `_canCancel` est un getter recalculé uniquement lors d'un rebuild (déclenché par `setState` dans `_load`, `_cancel` ou `_checkIntegrity`). Aucune minuterie ne forçait de rebuild à l'instant précis où les 5 minutes s'écoulaient : le bouton "Annuler le signalement" restait affiché indéfiniment tant que l'élève ne provoquait pas un rebuild par une autre interaction.
 **Impact :** Un élève laissant la page ouverte au-delà du délai (ou y revenant plus tard sans qu'un rebuild ait eu lieu) voyait toujours le bouton d'annulation actif. Un appui déclenchait un appel `DELETE /api/reports/mine/[id]` rejeté côté serveur (`409 — Le délai d'annulation de 5 minutes est dépassé.`), une erreur confuse puisque l'UI n'avait rien signalé.
 **Correction appliquée :** Ajout d'un `Timer` (`_cancelExpiry`) programmé dans `_scheduleCancelExpiry()` pour se déclencher exactement à l'expiration de la fenêtre de 5 minutes et forcer un `setState` qui recalcule `_canCancel`, masquant automatiquement le bouton. Le timer est annulé dans `dispose()` pour éviter tout `setState` après démontage du widget.
+
+---
+
+### Bug #25 — « Parler à l'équipe » : réponse élève non fonctionnelle ✅ RÉSOLU
+
+**Fichiers :**
+- `haven_backend/prisma/schema.prisma` (+ migration `add_message_model`)
+- `haven_backend/src/app/api/reports/mine/[id]/messages/route.ts` (nouveau)
+- `haven_backend/src/app/api/reports/[id]/messages/route.ts` (nouveau)
+- `haven_backend/src/app/api/reports/mine/[id]/route.ts`, `haven_backend/src/app/api/reports/[id]/route.ts` (GET détail)
+- `haven_app/lib/services/api_service.dart`
+- `haven_app/lib/pages/student/exchange_page.dart`
+- `haven_app/lib/pages/staff/staff_report_detail_page.dart`
+
+**Sévérité :** HIGH | **Confiance :** 10/10
+**Description :** Le flux élève → « Mes signalements » → détail → « Parler à l'équipe » ouvrait `ExchangePage`, dont la zone de saisie était purement décorative : le bouton d'envoi affichait seulement un `SnackBar` « Fonctionnalité de réponse bientôt disponible. » et vidait le champ, sans aucun appel réseau. Aucun endpoint de message élève n'existait, et le schéma Prisma ne disposait que de `FollowUp` (action de statut du staff, avec `staffId` et `newStatus` obligatoires) — impossible d'y stocker un message d'élève. La messagerie annoncée était donc entièrement non implémentée.
+**Impact :** Un élève en difficulté (potentiellement victime de harcèlement) croyait pouvoir dialoguer avec l'adulte de confiance de son établissement, mais ses messages n'étaient jamais envoyés ni enregistrés. Fonctionnalité centrale du produit inopérante et trompeuse.
+**Correction appliquée :** Implémentation d'une messagerie bidirectionnelle complète.
+
+- **Modèle `Message`** ajouté (`body`, `senderRole`, `reportId`, `senderId`, `createdAt`, index `[reportId, createdAt]`, cascade sur `Report` et `User`) + migration `add_message_model`. Distinct de `FollowUp` : conversation libre dans les deux sens.
+- **`POST /api/reports/mine/[id]/messages`** (élève) : vérifie l'appartenance du signalement, crée le message (`senderRole = STUDENT`), notifie le staff ciblé (même rôle, même école) + push, non-bloquant.
+- **`POST /api/reports/[id]/messages`** (staff) : même contrôle d'accès que le GET staff (école + `targetLevel === role`), crée le message avec le rôle de l'agent, notifie l'élève auteur + push.
+- **GET détail élève et staff** : ajout de `messages` (id, body, senderRole, createdAt) — seul le rôle de l'expéditeur est exposé, jamais le nom du staff (anonymat préservé, cohérent avec `followUps`).
+- **`ExchangePage` (élève)** : bouton d'envoi câblé sur `sendReportMessage`, fusion chronologique description + follow-ups + messages, auto-scroll, état d'envoi.
+- **`StaffReportDetailPage` (staff)** : nouvelle section « Conversation avec l'élève » (bulles élève/staff) + zone de réponse (`sendStaffReportMessage`).
+
+**Effet de bord nécessaire :** le bloc `datasource` de `schema.prisma` contenait encore `url = env("DATABASE_URL")`, non supporté par le Prisma **7.8.0** réellement installé (l'URL est fournie par `prisma.config.ts`). Ligne retirée pour permettre `prisma generate`. À noter : `package.json`/`package-lock.json` épinglent encore Prisma `6.19.3` alors que node_modules et le client généré committé sont en `7.8.0` — incohérence de versions à réconcilier séparément.
+
+**Étape manuelle restante :** appliquer la migration à la base (`prisma migrate deploy`) — non exécutée automatiquement car la base est hébergée (`db.prisma.io`).

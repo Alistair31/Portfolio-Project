@@ -16,6 +16,8 @@ class _StaffReportDetailPageState extends State<StaffReportDetailPage> {
   Map<String, dynamic>? _report;
   bool _loading = true;
   bool _updating = false;
+  bool _sendingMessage = false;
+  final _msgController = TextEditingController();
 
   static const _typeLabels = {
     'PHYSICAL': 'Violence physique',
@@ -76,6 +78,12 @@ class _StaffReportDetailPageState extends State<StaffReportDetailPage> {
     _load();
   }
 
+  @override
+  void dispose() {
+    _msgController.dispose();
+    super.dispose();
+  }
+
   Future<void> _load() async {
     final token = SessionService().getToken();
     if (token == null) return;
@@ -84,6 +92,28 @@ class _StaffReportDetailPageState extends State<StaffReportDetailPage> {
       if (mounted) setState(() { _report = report; _loading = false; });
     } catch (_) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _sendMessage() async {
+    final text = _msgController.text.trim();
+    if (text.isEmpty || _sendingMessage) return;
+
+    final token = SessionService().getToken();
+    if (token == null) return;
+
+    setState(() => _sendingMessage = true);
+    try {
+      await ApiService().sendStaffReportMessage(token: token, id: widget.reportId, body: text);
+      _msgController.clear();
+      await _load(); // rafraîchit la conversation
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) setState(() => _sendingMessage = false);
     }
   }
 
@@ -216,6 +246,7 @@ class _StaffReportDetailPageState extends State<StaffReportDetailPage> {
     final r = _report!;
     final status = r['status'] as String;
     final followUps = (r['followUps'] as List<dynamic>?) ?? [];
+    final messages = (r['messages'] as List<dynamic>?) ?? [];
     final author = r['author'] as Map<String, dynamic>?;
 
     return SingleChildScrollView(
@@ -303,6 +334,75 @@ class _StaffReportDetailPageState extends State<StaffReportDetailPage> {
                 dateLabel:    _formatShort(fu['createdAt'] as String),
               );
             }),
+
+          // Conversation libre avec l'élève
+          const SizedBox(height: 28),
+          _SectionTitle(
+            title: 'Conversation avec l\'élève',
+            badge: messages.isEmpty ? null : '${messages.length}',
+          ),
+          const SizedBox(height: 12),
+          if (messages.isEmpty)
+            const Text('Aucun message pour l\'instant.',
+              style: TextStyle(fontSize: 13, color: AppColors.edward))
+          else
+            ...messages.map((m) {
+              final msg = m as Map<String, dynamic>;
+              final isStudent = msg['senderRole'] == 'STUDENT';
+              return _MsgBubble(
+                text:      msg['body'] as String,
+                isStudent: isStudent,
+                dateLabel: _formatShort(msg['createdAt'] as String),
+              );
+            }),
+          const SizedBox(height: 12),
+          // Zone de réponse — disponible pour tout agent ayant accès au signalement
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.hairline),
+                  ),
+                  child: TextField(
+                    controller: _msgController,
+                    minLines: 1,
+                    maxLines: 4,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => _sendMessage(),
+                    style: const TextStyle(fontSize: 14, color: AppColors.textDark),
+                    decoration: const InputDecoration(
+                      hintText: 'Répondre à l\'élève…',
+                      hintStyle: TextStyle(color: AppColors.edward),
+                      isDense: true,
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: _sendingMessage ? null : _sendMessage,
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    color: AppColors.eucalyptus,
+                    shape: BoxShape.circle,
+                  ),
+                  child: _sendingMessage
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                ),
+              ),
+            ],
+          ),
 
           // Actions staff (TEACHER / DIRECTOR_CPE uniquement)
           if (canEdit && status != 'CLOSED') ...[
@@ -445,6 +545,57 @@ class _Row extends StatelessWidget {
       ],
     ),
   );
+}
+
+class _MsgBubble extends StatelessWidget {
+  final String text;
+  final bool isStudent;
+  final String dateLabel;
+  const _MsgBubble({required this.text, required this.isStudent, required this.dateLabel});
+
+  @override
+  Widget build(BuildContext context) {
+    // Point de vue staff : message élève à gauche (entrant), réponse staff à droite.
+    return Align(
+      alignment: isStudent ? Alignment.centerLeft : Alignment.centerRight,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Column(
+            crossAxisAlignment: isStudent ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isStudent ? Colors.white : AppColors.eucalyptus,
+                  borderRadius: BorderRadius.only(
+                    topLeft: const Radius.circular(18),
+                    topRight: const Radius.circular(18),
+                    bottomLeft: Radius.circular(isStudent ? 4 : 18),
+                    bottomRight: Radius.circular(isStudent ? 18 : 4),
+                  ),
+                  border: isStudent ? Border.all(color: AppColors.hairline) : null,
+                ),
+                child: Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.45,
+                    color: isStudent ? AppColors.textDark : Colors.white,
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 3, left: 4, right: 4),
+                child: Text(dateLabel, style: const TextStyle(fontSize: 10, color: AppColors.edward)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _FollowUpTile extends StatelessWidget {

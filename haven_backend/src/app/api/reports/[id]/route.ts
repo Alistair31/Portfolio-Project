@@ -71,6 +71,16 @@ export async function GET(
           },
           orderBy: { createdAt: 'asc' },
         },
+        // Conversation libre élève ↔ staff (distincte des follow-ups de statut).
+        messages: {
+          select: {
+            id:         true,
+            body:       true,
+            senderRole: true,
+            createdAt:  true,
+          },
+          orderBy: { createdAt: 'asc' },
+        },
       },
     })
 
