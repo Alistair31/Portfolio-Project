@@ -116,6 +116,11 @@ model Report {
   gravity        Int
   description    String
   targetLevel    Role
+  // Niveau (rôle) d'où le signalement a été transféré au Rectorat, le cas échéant.
+  // `targetLevel` devient RECTORAT à l'escalade — ce champ conserve le niveau
+  // d'origine pour que le signalement reste comptabilisé dans les stats de ce
+  // niveau (et de son école). null = jamais escaladé.
+  escalatedFromLevel Role?
   anonymityLevel AnonymityLevel
   status         ReportStatus   @default(PENDING)
   integrityHash  String?

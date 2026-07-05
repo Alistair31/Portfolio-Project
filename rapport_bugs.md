@@ -292,3 +292,44 @@
 **Effet de bord nécessaire :** le bloc `datasource` de `schema.prisma` contenait encore `url = env("DATABASE_URL")`, non supporté par le Prisma **7.8.0** réellement installé (l'URL est fournie par `prisma.config.ts`). Ligne retirée pour permettre `prisma generate`. À noter : `package.json`/`package-lock.json` épinglent encore Prisma `6.19.3` alors que node_modules et le client généré committé sont en `7.8.0` — incohérence de versions à réconcilier séparément.
 
 **Étape manuelle restante :** appliquer la migration à la base (`prisma migrate deploy`) — non exécutée automatiquement car la base est hébergée (`db.prisma.io`).
+
+---
+
+### Bug #26 — Navbar cassée depuis l'Espace Safe ✅ RÉSOLU
+
+**Fichier :** `haven_app/lib/pages/student/safe_space_page.dart`
+**Sévérité :** MEDIUM | **Confiance :** 10/10
+**Description :** Depuis l'Espace Safe, la barre de navigation basse était inopérante. Son handler `_onTabTap` ne gérait que les index 0 et 2 par un simple `Navigator.maybePop()`, et le `onCenterTap` faisait lui aussi `maybePop()` :
+- **Suivi** (index 1) : aucune action, l'onglet ne répondait pas.
+- **Compte** (index 2) : ramenait à l'Accueil au lieu d'ouvrir la page Compte.
+- **« + »** (bouton central) : ramenait à l'Accueil au lieu d'ouvrir le flux de signalement.
+
+Seul **Accueil** (index 0) fonctionnait (retour à la home via `maybePop`).
+**Impact :** Un élève dans l'Espace Safe (page de décompression, contexte sensible) se retrouvait piégé : impossible d'atteindre Suivi, Compte ou de lancer un signalement sans repasser par l'accueil.
+**Correction appliquée :** Réécriture de `_onTabTap` sur le même modèle que `SuiviPage` — Accueil → `maybePop()`, Suivi → `push(SuiviPage)`, Compte → `push(AccountPage)` — et ajout de `_openReportFlow()` (`push(ReportTargetPage)`) câblé sur `onCenterTap`. Imports `suivi_page.dart`, `account_page.dart` et `report/report_target_page.dart` ajoutés.
+
+---
+
+### Bug #27 — Transfert au Rectorat sort le signalement des stats du niveau/école d'origine ✅ RÉSOLU
+
+**Fichiers :**
+- `haven_backend/prisma/schema.prisma` (+ migration `add_escalated_from_level`)
+- `haven_backend/src/app/api/reports/[id]/escalate/route.ts`
+- `haven_backend/src/app/api/stats/route.ts`
+- `haven_backend/src/app/api/stats/timeline/route.ts`
+
+**Sévérité :** HIGH | **Confiance :** 9/10
+**Description :** L'escalade (`POST /api/reports/[id]/escalate`) faisait passer `targetLevel` à `RECTORAT`. Or les deux routes de statistiques du staff non-Rectorat filtrent sur `targetLevel = user.role` (`stats/route.ts` via Prisma `where`, `stats/timeline/route.ts` via `AND r."targetLevel" = ${user.role}` en SQL brut). Dès qu'un professeur transférait un signalement au Rectorat, ce dernier ne matchait plus le filtre `TEACHER` (idem `DIRECTOR_CPE`) : il disparaissait de la liste active du prof **et** de ses statistiques — total, taux de résolution, répartitions et courbe d'évolution. L'école d'origine (portée par `author.schoolCode`, inchangé) voyait donc son décompte sous-évalué.
+**Impact :** Statistiques faussées à chaque transfert. Un lycée pouvait masquer/perdre des incidents réels de ses indicateurs simplement en escaladant, ce qui compromet le pilotage pHARe et la fiabilité des chiffres remontés.
+**Correction appliquée :**
+
+- Champ `escalatedFromLevel Role?` ajouté au modèle `Report` (null = jamais escaladé), migration `add_escalated_from_level`.
+- La route d'escalade renseigne `escalatedFromLevel = targetLevel` d'origine tout en passant `targetLevel` à `RECTORAT` (le routage/l'accès Rectorat restent inchangés).
+- `stats/route.ts` : le filtre niveau devient `OR: [{ targetLevel: role }, { escalatedFromLevel: role }]` (école toujours contrainte par `author.schoolCode`).
+- `stats/timeline/route.ts` : `AND (r."targetLevel" = ${role} OR r."escalatedFromLevel" = ${role})`.
+
+Résultat : un signalement transféré reste comptabilisé dans les stats du niveau et de l'école d'origine, sans double comptage (le Rectorat agrège déjà `where: {}`).
+
+**Note de périmètre :** volontairement, le signalement transféré **quitte la liste de travail active** du prof (il relève désormais du Rectorat) — seule l'attribution statistique est corrigée. Si l'on souhaite aussi le garder visible (en lecture seule, badge « Transféré ») côté prof, c'est un ajustement séparé à demander.
+
+**Étape manuelle restante :** appliquer la migration (`prisma migrate deploy`) — comme #25, non exécutée automatiquement (base hébergée).

@@ -52,8 +52,10 @@ export async function GET(request: Request) {
     // Date de début calculée en JS — évite Prisma.raw et les problèmes d'adaptateur
     const since = new Date(Date.now() - config.days * 24 * 60 * 60 * 1000)
 
-    // Filtres conditionnels : RECTORAT voit tout, les autres voient leur école + leur targetLevel
-    const roleFilter   = isRectorat ? Prisma.empty : Prisma.sql`AND r."targetLevel" = ${user.role}`
+    // Filtres conditionnels : RECTORAT voit tout, les autres voient leur école + leur
+    // niveau — y compris les signalements qu'ils ont transférés au Rectorat
+    // (escalatedFromLevel), pour qu'ils restent dans la courbe du niveau d'origine.
+    const roleFilter   = isRectorat ? Prisma.empty : Prisma.sql`AND (r."targetLevel" = ${user.role} OR r."escalatedFromLevel" = ${user.role})`
     const schoolJoin   = isRectorat ? Prisma.empty : Prisma.sql`INNER JOIN "User" u ON u.id = r."authorId"`
     const schoolFilter = isRectorat ? Prisma.empty : Prisma.sql`AND u."schoolCode" = ${schoolCode}`
 

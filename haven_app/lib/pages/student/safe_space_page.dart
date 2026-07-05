@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import '../../widgets/haven_bottom_bar.dart';
+import '../report/report_target_page.dart';
+import 'account_page.dart';
 import 'resources_page.dart';
+import 'suivi_page.dart';
 
 /// Écran 12a · Espace Safe — respiration + contacts disponibles.
 class SafeSpacePage extends StatelessWidget {
@@ -15,12 +18,31 @@ class SafeSpacePage extends StatelessWidget {
     _Contact(role: 'Référent pHARe', name: 'M. Anand',     status: _Status.absent),
   ];
 
+  // Navigation cohérente avec les autres pages élève (cf. SuiviPage) :
+  // Accueil → retour à la home (dessous dans la pile), Suivi/Compte → push,
+  // et le « + » ouvre le flux de signalement.
   void _onTabTap(BuildContext context, int index) {
-    if (index == 0) {
-      Navigator.of(context).maybePop();
-    } else if (index == 2) {
-      Navigator.of(context).maybePop();
+    switch (index) {
+      case 0:
+        Navigator.of(context).maybePop();
+        break;
+      case 1:
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const SuiviPage()),
+        );
+        break;
+      case 2:
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const AccountPage()),
+        );
+        break;
     }
+  }
+
+  void _openReportFlow(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ReportTargetPage()),
+    );
   }
 
   @override
@@ -162,7 +184,7 @@ class SafeSpacePage extends StatelessWidget {
       bottomNavigationBar: HavenBottomBar(
         currentIndex: 0,
         onTap: (i) => _onTabTap(context, i),
-        onCenterTap: () => Navigator.of(context).maybePop(),
+        onCenterTap: () => _openReportFlow(context),
       ),
     );
   }
