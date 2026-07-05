@@ -75,7 +75,13 @@ class _ReportCategoryPageState extends State<ReportCategoryPage> {
                 ),
                 Expanded(
                   child: GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
+                    // La grille défile dans l'espace restant (Expanded). Sur les
+                    // petits écrans, les 4 rangées de tuiles ne tiennent pas en
+                    // entier : sans défilement (NeverScrollableScrollPhysics), le
+                    // bas de la grille devenait inaccessible. Le bouton
+                    // « Continuer » reste ancré sous la grille.
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 4),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
                       crossAxisSpacing: 12,

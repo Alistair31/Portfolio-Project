@@ -349,3 +349,13 @@ Résultat : un signalement transféré reste comptabilisé dans les stats du niv
 - `RefreshIndicator` (pull-to-refresh) et le retour depuis le détail rafraîchissent désormais liste **et** stats (`_refresh`).
 
 Aucun changement backend : réutilisation de l'endpoint `GET /api/stats` existant.
+
+---
+
+### Bug #29 — Signalement étape 2 : défilement impossible ✅ RÉSOLU
+
+**Fichier :** `haven_app/lib/pages/report/report_category_page.dart`
+**Sévérité :** MEDIUM | **Confiance :** 9/10
+**Description :** L'étape 2 du signalement (« De quoi s'agit-il ? », grille de 8 catégories) plaçait sa `GridView.builder` dans un `Expanded` avec `physics: NeverScrollableScrollPhysics()`. Les tuiles ont une hauteur fixe (dérivée de la largeur via `childAspectRatio`), indépendante de l'espace vertical disponible. Sur les petits écrans, les 4 rangées de tuiles + en-tête + description + CTA dépassent la hauteur de l'écran ; la grille n'ayant pas le droit de défiler, le bas devenait inaccessible et la page paraissait figée.
+**Impact :** Sur beaucoup de téléphones, une partie des catégories (et parfois le bouton) était hors écran sans aucun moyen de faire défiler — l'élève ne pouvait pas terminer son signalement.
+**Correction appliquée :** Remplacement de `NeverScrollableScrollPhysics` par `AlwaysScrollableScrollPhysics` sur la grille (+ léger `padding` bas). La grille défile désormais dans son `Expanded`, le bouton « Continuer » restant ancré en dessous. Vérifié : aucune autre page du flux de signalement n'utilise ce pattern.
