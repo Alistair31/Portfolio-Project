@@ -17,6 +17,7 @@ class StaffHomePage extends StatefulWidget {
 
 class _StaffHomePageState extends State<StaffHomePage> {
   List<Map<String, dynamic>> _reports = [];
+  Map<String, dynamic>? _stats;
   bool _loading = true;
   String? _selectedStatus;
 
@@ -60,6 +61,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
   void initState() {
     super.initState();
     _load();
+    _loadStats();
   }
 
   Future<void> _load() async {
@@ -72,6 +74,36 @@ class _StaffHomePageState extends State<StaffHomePage> {
     } catch (_) {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  // Aperçu statistique de la home — indépendant du filtre de statut de la liste.
+  // Non bloquant : en cas d'échec, l'aperçu est simplement masqué.
+  Future<void> _loadStats() async {
+    final token = SessionService().getToken();
+    if (token == null) return;
+    try {
+      final stats = await ApiService().getStats(token: token);
+      if (mounted) setState(() => _stats = stats);
+    } catch (_) {
+      // silencieux : la liste reste utilisable sans l'aperçu
+    }
+  }
+
+  Future<void> _refresh() => Future.wait([_load(), _loadStats()]);
+
+  void _openFullStats() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => Scaffold(
+        appBar: AppBar(
+          title: const Text('Statistiques'),
+          backgroundColor: AppColors.backgroundTop,
+          foregroundColor: AppColors.racingGreen,
+          elevation: 0,
+        ),
+        backgroundColor: AppColors.backgroundBottom,
+        body: const StaffStatsPage(),
+      )),
+    );
   }
 
   @override
@@ -92,7 +124,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
         child: SafeArea(
           bottom: false,
           child: RefreshIndicator(
-            onRefresh: _load,
+            onRefresh: _refresh,
             color: AppColors.eucalyptus,
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -139,18 +171,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
                               child: _QuickLink(
                                 icon: Icons.bar_chart_outlined,
                                 label: 'Statistiques',
-                                onTap: () => Navigator.of(context).push(
-                                  MaterialPageRoute(builder: (_) => Scaffold(
-                                    appBar: AppBar(
-                                      title: const Text('Statistiques'),
-                                      backgroundColor: AppColors.backgroundTop,
-                                      foregroundColor: AppColors.racingGreen,
-                                      elevation: 0,
-                                    ),
-                                    backgroundColor: AppColors.backgroundBottom,
-                                    body: const StaffStatsPage(),
-                                  )),
-                                ),
+                                onTap: _openFullStats,
                               ),
                             ),
                             if (role == 'RECTORAT') ...[
@@ -211,35 +232,37 @@ class _StaffHomePageState extends State<StaffHomePage> {
                   const SliverFillRemaining(
                     child: Center(child: CircularProgressIndicator(color: AppColors.eucalyptus)),
                   )
-                else if (_reports.isEmpty)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.inbox_outlined, size: 56, color: AppColors.edward),
-                          const SizedBox(height: 14),
-                          const Text(
-                            'Aucun signalement.',
-                            style: TextStyle(fontSize: 15, color: AppColors.corduroy, fontWeight: FontWeight.w500),
-                          ),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Tire vers le bas pour actualiser.',
-                            style: TextStyle(fontSize: 13, color: AppColors.edward),
-                          ),
-                        ],
+                else ...[
+                  if (_reports.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+                        child: Column(
+                          children: [
+                            Icon(Icons.inbox_outlined, size: 48, color: AppColors.edward),
+                            const SizedBox(height: 12),
+                            Text(
+                              _selectedStatus == null
+                                  ? 'Aucun signalement.'
+                                  : 'Aucun signalement pour ce filtre.',
+                              style: const TextStyle(fontSize: 15, color: AppColors.corduroy, fontWeight: FontWeight.w500),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Tire vers le bas pour actualiser.',
+                              style: TextStyle(fontSize: 13, color: AppColors.edward),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  )
-                else
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
-                    sliver: SliverList.separated(
-                      itemCount: _reports.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 10),
-                      itemBuilder: (_, i) {
+                    )
+                  else
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                      sliver: SliverList.separated(
+                        itemCount: _reports.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 10),
+                        itemBuilder: (_, i) {
                         final r = _reports[i];
                         final status = r['status'] as String;
                         return GestureDetector(
@@ -247,7 +270,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
                             await Navigator.of(context).push(MaterialPageRoute(
                               builder: (_) => StaffReportDetailPage(reportId: r['id'] as String),
                             ));
-                            _load();
+                            _refresh();
                           },
                           child: Container(
                             padding: const EdgeInsets.all(16),
@@ -322,9 +345,141 @@ class _StaffHomePageState extends State<StaffHomePage> {
                       },
                     ),
                   ),
+                  // Aperçu statistique compact, sous les suivis (remplit aussi
+                  // la page quand la liste est vide).
+                  if (_stats != null)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                        child: _MiniStats(stats: _stats!, onSeeAll: _openFullStats),
+                      ),
+                    ),
+                ],
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Aperçu statistique compact affiché sur la home staff, sous la liste des
+/// suivis. Reprend les chiffres clés de `GET /api/stats` sans la version
+/// complète (graphe d'évolution, répartitions détaillées) — voir « Voir tout ».
+class _MiniStats extends StatelessWidget {
+  final Map<String, dynamic> stats;
+  final VoidCallback onSeeAll;
+
+  const _MiniStats({required this.stats, required this.onSeeAll});
+
+  @override
+  Widget build(BuildContext context) {
+    final total      = stats['total'] as int? ?? 0;
+    final rate       = (((stats['resolutionRate'] as num?) ?? 0) * 100).round();
+    final byStatus   = (stats['byStatus'] as Map<String, dynamic>?) ?? const {};
+    final pending    = byStatus['PENDING'] as int? ?? 0;
+    final inProgress = byStatus['IN_PROGRESS'] as int? ?? 0;
+    final closed     = byStatus['CLOSED'] as int? ?? 0;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.hairline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                'Aperçu',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.racingGreen),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: onSeeAll,
+                behavior: HitTestBehavior.opaque,
+                child: const Row(
+                  children: [
+                    Text('Voir tout', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.eucalyptus)),
+                    Icon(Icons.chevron_right, size: 16, color: AppColors.eucalyptus),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '$total',
+                style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: AppColors.racingGreen, letterSpacing: -1),
+              ),
+              const SizedBox(width: 8),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 6),
+                child: Text('signalements', style: TextStyle(fontSize: 13, color: AppColors.corduroy)),
+              ),
+              const Spacer(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '$rate%',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.eucalyptus),
+                  ),
+                  const Text('résolus', style: TextStyle(fontSize: 11, color: AppColors.corduroy)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _StatPill(label: 'En attente', count: pending, color: const Color(0xFFE89B4E)),
+              const SizedBox(width: 8),
+              _StatPill(label: 'En cours', count: inProgress, color: const Color(0xFF4A90D9)),
+              const SizedBox(width: 8),
+              _StatPill(label: 'Clôturés', count: closed, color: AppColors.eucalyptus),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatPill extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+
+  const _StatPill({required this.label, required this.count, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+        decoration: BoxDecoration(
+          color: color.withAlpha(20),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withAlpha(60)),
+        ),
+        child: Column(
+          children: [
+            Text('$count', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: color)),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 10.5, color: AppColors.corduroy, fontWeight: FontWeight.w600),
+            ),
+          ],
         ),
       ),
     );

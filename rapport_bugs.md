@@ -333,3 +333,19 @@ Résultat : un signalement transféré reste comptabilisé dans les stats du niv
 **Note de périmètre :** volontairement, le signalement transféré **quitte la liste de travail active** du prof (il relève désormais du Rectorat) — seule l'attribution statistique est corrigée. Si l'on souhaite aussi le garder visible (en lecture seule, badge « Transféré ») côté prof, c'est un ajustement séparé à demander.
 
 **Étape manuelle restante :** appliquer la migration (`prisma migrate deploy`) — comme #25, non exécutée automatiquement (base hébergée).
+
+---
+
+### Amélioration #28 — Aperçu statistique sur la page d'accueil staff ✅ FAIT
+
+**Fichier :** `haven_app/lib/pages/staff/staff_home_page.dart`
+**Type :** Ergonomie / remplissage de page
+**Contexte :** La home staff n'affichait que la liste des suivis ; les statistiques n'étaient accessibles que via une page séparée. Sans signalement, la page paraissait très vide (grand `SliverFillRemaining` centré sur « Aucun signalement »).
+**Amélioration appliquée :**
+
+- Ajout d'un chargement des stats (`getStats`) sur la home, indépendant du filtre de statut de la liste et non bloquant (si l'appel échoue, l'aperçu est simplement masqué).
+- Nouveau widget `_MiniStats` (+ `_StatPill`) : carte compacte « Aperçu » sous la liste des suivis, avec total, taux de résolution, et 3 pastilles En attente / En cours / Clôturés (couleurs cohérentes avec les badges de statut). Lien « Voir tout → » vers la page Statistiques complète.
+- État vide compact (`SliverToBoxAdapter` au lieu du `SliverFillRemaining` plein écran) : l'aperçu s'affiche juste en dessous et remplit la page même sans signalement. Message adapté selon qu'un filtre est actif (« Aucun signalement. » / « Aucun signalement pour ce filtre. »).
+- `RefreshIndicator` (pull-to-refresh) et le retour depuis le détail rafraîchissent désormais liste **et** stats (`_refresh`).
+
+Aucun changement backend : réutilisation de l'endpoint `GET /api/stats` existant.
