@@ -359,3 +359,19 @@ Aucun changement backend : réutilisation de l'endpoint `GET /api/stats` existan
 **Description :** L'étape 2 du signalement (« De quoi s'agit-il ? », grille de 8 catégories) plaçait sa `GridView.builder` dans un `Expanded` avec `physics: NeverScrollableScrollPhysics()`. Les tuiles ont une hauteur fixe (dérivée de la largeur via `childAspectRatio`), indépendante de l'espace vertical disponible. Sur les petits écrans, les 4 rangées de tuiles + en-tête + description + CTA dépassent la hauteur de l'écran ; la grille n'ayant pas le droit de défiler, le bas devenait inaccessible et la page paraissait figée.
 **Impact :** Sur beaucoup de téléphones, une partie des catégories (et parfois le bouton) était hors écran sans aucun moyen de faire défiler — l'élève ne pouvait pas terminer son signalement.
 **Correction appliquée :** Remplacement de `NeverScrollableScrollPhysics` par `AlwaysScrollableScrollPhysics` sur la grille (+ léger `padding` bas). La grille défile désormais dans son `Expanded`, le bouton « Continuer » restant ancré en dessous. Vérifié : aucune autre page du flux de signalement n'utilise ce pattern.
+
+---
+
+### Bug #30 — Nombre de signalements codé en dur sur l'accueil élève ✅ RÉSOLU
+
+**Fichier :** `haven_app/lib/pages/student/student_home_page.dart`
+**Sévérité :** LOW | **Confiance :** 10/10
+**Description :** La carte « Mes signalements » de l'accueil élève affichait un `subtitle: '1 en cours'` **codé en dur**. La page n'effectuait aucun appel réseau : le compteur indiquait toujours « 1 en cours », quel que soit le nombre réel de signalements (0, 3, …).
+**Impact :** Information trompeuse dès le premier écran — un élève sans signalement voyait « 1 en cours », un élève en ayant plusieurs n'en voyait qu'« 1 ».
+**Correction appliquée :**
+
+- Chargement réel via `getMyReports` dans `initState` (`StudentHomePage` était déjà un `StatefulWidget` mais ne chargeait rien). Imports `api_service.dart` et `session_service.dart` ajoutés.
+- Sous-titre dynamique (`_reportsSubtitle`) : « Suivi de tes signalements » pendant le chargement, puis « Aucun pour l'instant » (0), « Tous traités » (tous clôturés) ou « N en cours » (N = signalements non `CLOSED`).
+- Rafraîchissement du compteur au retour de la page Suivi (carte + onglet navbar) et à la fin du flux de signalement (`_openReportFlow`), pour refléter les créations/annulations/clôtures.
+
+Aucun changement backend.

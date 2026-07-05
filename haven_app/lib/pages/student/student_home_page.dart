@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../services/api_service.dart';
+import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/action_mini_card.dart';
 import '../../widgets/conversation_card.dart';
@@ -25,12 +27,46 @@ class StudentHomePage extends StatefulWidget {
 
 class _StudentHomePageState extends State<StudentHomePage> {
   int _currentIndex = 0;
+  bool _reportsLoaded = false;
+  int _activeReports = 0;
+  int _totalReports = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadReports();
+  }
+
+  // Récupère le nombre réel de signalements de l'élève pour la carte
+  // « Mes signalements » (auparavant codé en dur à « 1 en cours »).
+  Future<void> _loadReports() async {
+    final token = SessionService().getToken();
+    if (token == null) return;
+    try {
+      final reports = await ApiService().getMyReports(token: token);
+      if (!mounted) return;
+      setState(() {
+        _totalReports = reports.length;
+        _activeReports = reports.where((r) => r['status'] != 'CLOSED').length;
+        _reportsLoaded = true;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _reportsLoaded = true);
+    }
+  }
+
+  String get _reportsSubtitle {
+    if (!_reportsLoaded) return 'Suivi de tes signalements';
+    if (_totalReports == 0) return 'Aucun pour l\'instant';
+    if (_activeReports == 0) return 'Tous traités';
+    return '$_activeReports en cours';
+  }
 
   void _onTabTap(int index) {
     if (index == 1) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const SuiviPage()),
-      );
+      Navigator.of(context)
+          .push(MaterialPageRoute(builder: (_) => const SuiviPage()))
+          .then((_) => _loadReports());
       return;
     }
     if (index == 2) {
@@ -42,10 +78,11 @@ class _StudentHomePageState extends State<StudentHomePage> {
     setState(() => _currentIndex = index);
   }
 
-  void _openReportFlow() {
-    Navigator.of(context).push(
+  Future<void> _openReportFlow() async {
+    await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const ReportTargetPage()),
     );
+    _loadReports();
   }
 
   @override
@@ -99,10 +136,13 @@ class _StudentHomePageState extends State<StudentHomePage> {
                           child: ActionMiniCard(
                             icon: Icons.access_time_outlined,
                             title: 'Mes signalements',
-                            subtitle: '1 en cours',
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const SuiviPage()),
-                            ),
+                            subtitle: _reportsSubtitle,
+                            onTap: () async {
+                              await Navigator.of(context).push(
+                                MaterialPageRoute(builder: (_) => const SuiviPage()),
+                              );
+                              _loadReports();
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),
