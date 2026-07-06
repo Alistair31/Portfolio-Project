@@ -5,8 +5,9 @@ import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
 
 /// Écran 11 · Échanger — messagerie élève ↔ équipe pHARe.
-/// Affiche les follow-ups du staff comme des bulles de chat.
-/// La zone de saisie est UI-only côté élève (pas d'endpoint de message étudiant).
+/// Conversation bidirectionnelle : le contenu du signalement, les follow-ups de
+/// statut du staff et les messages libres (élève et staff) sont fusionnés dans
+/// un fil chronologique. L'élève peut répondre via POST /reports/mine/[id]/messages.
 class ExchangePage extends StatefulWidget {
   final String reportId;
 
@@ -19,7 +20,9 @@ class ExchangePage extends StatefulWidget {
 class _ExchangePageState extends State<ExchangePage> {
   Map<String, dynamic>? _report;
   bool _loading = true;
+  bool _sending = false;
   final _inputController = TextEditingController();
+  final _scrollController = ScrollController();
 
   static const _roleLabels = {
     'TEACHER':      'Professeur principal',
@@ -43,6 +46,7 @@ class _ExchangePageState extends State<ExchangePage> {
   @override
   void dispose() {
     _inputController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -51,9 +55,43 @@ class _ExchangePageState extends State<ExchangePage> {
     if (token == null) { setState(() => _loading = false); return; }
     try {
       final report = await ApiService().getReportDetail(token: token, id: widget.reportId);
-      if (mounted) setState(() { _report = report; _loading = false; });
+      if (mounted) {
+        setState(() { _report = report; _loading = false; });
+        _scrollToBottom();
+      }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  // Fait défiler le fil jusqu'au dernier message après un (re)chargement.
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      }
+    });
+  }
+
+  Future<void> _send() async {
+    final text = _inputController.text.trim();
+    if (text.isEmpty || _sending) return;
+
+    final token = SessionService().getToken();
+    if (token == null) return;
+
+    setState(() => _sending = true);
+    try {
+      await ApiService().sendReportMessage(token: token, id: widget.reportId, body: text);
+      _inputController.clear();
+      await _load(); // rafraîchit le fil avec le message envoyé
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    } finally {
+      if (mounted) setState(() => _sending = false);
     }
   }
 
@@ -211,11 +249,34 @@ class _ExchangePageState extends State<ExchangePage> {
     );
   }
 
+  // Fusionne follow-ups de statut + messages libres en un fil trié chronologiquement.
+  List<Map<String, dynamic>> get _conversation {
+    final entries = <Map<String, dynamic>>[];
+    for (final fu in _followUps) {
+      entries.add({
+        'time':      DateTime.parse(fu['createdAt'] as String),
+        'isStudent': false,
+        'text':      fu['notes'] as String,
+      });
+    }
+    final messages = (_report?['messages'] as List<dynamic>?) ?? [];
+    for (final m in messages.cast<Map<String, dynamic>>()) {
+      entries.add({
+        'time':      DateTime.parse(m['createdAt'] as String),
+        'isStudent': m['senderRole'] == 'STUDENT',
+        'text':      m['body'] as String,
+      });
+    }
+    entries.sort((a, b) => (a['time'] as DateTime).compareTo(b['time'] as DateTime));
+    return entries;
+  }
+
   Widget _buildMessages() {
-    final followUps = _followUps;
+    final conversation = _conversation;
     final description = _report?['description'] as String? ?? '';
 
     return ListView(
+      controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       children: [
         // Message initial (contenu du signalement élève)
@@ -230,15 +291,14 @@ class _ExchangePageState extends State<ExchangePage> {
           const SizedBox(height: 16),
         ],
 
-        // Follow-ups staff
-        if (followUps.isEmpty && description.isEmpty)
+        if (conversation.isEmpty && description.isEmpty)
           const _SystemMessage(text: "En attente d'une réponse de l'équipe…"),
 
-        for (final fu in followUps) ...[
+        for (final e in conversation) ...[
           _ChatBubble(
-            text: fu['notes'] as String,
-            isStudent: false,
-            time: _formatTime(fu['createdAt'] as String),
+            text: e['text'] as String,
+            isStudent: e['isStudent'] as bool,
+            time: _formatTime((e['time'] as DateTime).toIso8601String()),
           ),
           const SizedBox(height: 10),
         ],
@@ -272,6 +332,8 @@ class _ExchangePageState extends State<ExchangePage> {
               child: TextField(
                 controller: _inputController,
                 maxLines: 1,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _send(),
                 style: const TextStyle(fontSize: 14, color: AppColors.textDark),
                 decoration: const InputDecoration(
                   hintText: 'Écris un message…',
@@ -285,13 +347,7 @@ class _ExchangePageState extends State<ExchangePage> {
           ),
           const SizedBox(width: 10),
           GestureDetector(
-            onTap: () {
-              if (_inputController.text.trim().isEmpty) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Fonctionnalité de réponse bientôt disponible.")),
-              );
-              _inputController.clear();
-            },
+            onTap: _sending ? null : _send,
             child: Container(
               width: 44,
               height: 44,
@@ -299,7 +355,12 @@ class _ExchangePageState extends State<ExchangePage> {
                 color: AppColors.eucalyptus,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+              child: _sending
+                  ? const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.send_rounded, color: Colors.white, size: 20),
             ),
           ),
         ],

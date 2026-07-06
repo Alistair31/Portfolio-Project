@@ -8,7 +8,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // L'URL de connexion est fournie par prisma.config.ts (datasource.url) —
+  // Prisma 7 n'accepte plus `url` dans ce bloc.
 }
 
 enum Role {
@@ -65,6 +66,7 @@ model User {
 
   reports          Report[]
   followUps        FollowUp[]
+  messages         Message[]
   notifications    Notification[]
   moods            Mood[]
   deletionRequests AccountDeletionRequest[]
@@ -114,6 +116,11 @@ model Report {
   gravity        Int
   description    String
   targetLevel    Role
+  // Niveau (rôle) d'où le signalement a été transféré au Rectorat, le cas échéant.
+  // `targetLevel` devient RECTORAT à l'escalade — ce champ conserve le niveau
+  // d'origine pour que le signalement reste comptabilisé dans les stats de ce
+  // niveau (et de son école). null = jamais escaladé.
+  escalatedFromLevel Role?
   anonymityLevel AnonymityLevel
   status         ReportStatus   @default(PENDING)
   integrityHash  String?
@@ -123,6 +130,7 @@ model Report {
 
   author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   followUps     FollowUp[]
+  messages      Message[]
   notifications Notification[]
 }
 
@@ -136,6 +144,24 @@ model FollowUp {
 
   report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
   staff  User   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+}
+
+// Message libre échangé sur un signalement entre l'élève auteur et le staff.
+// Distinct de FollowUp (qui matérialise un changement de statut) : ici c'est de
+// la conversation pure, dans les deux sens. `senderRole` est dénormalisé pour
+// pouvoir afficher/aligner les bulles sans re-résoudre le rôle de l'expéditeur.
+model Message {
+  id         String   @id @default(cuid())
+  body       String
+  senderRole Role
+  createdAt  DateTime @default(now())
+  reportId   String
+  senderId   String
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  sender User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, createdAt])
 }
 
 model Notification {

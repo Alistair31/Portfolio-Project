@@ -35,8 +35,13 @@ export async function GET(request: Request) {
       where: isRectorat
         ? {}
         : {
-            targetLevel: user.role as 'TEACHER' | 'DIRECTOR_CPE',
             author: { schoolCode },
+            // Le niveau (prof / direction) voit ses signalements + ceux qu'il a
+            // transférés au Rectorat (qui restent dans SES stats malgré l'escalade).
+            OR: [
+              { targetLevel: user.role as 'TEACHER' | 'DIRECTOR_CPE' },
+              { escalatedFromLevel: user.role as 'TEACHER' | 'DIRECTOR_CPE' },
+            ],
           },
       select: {
         status:  true,

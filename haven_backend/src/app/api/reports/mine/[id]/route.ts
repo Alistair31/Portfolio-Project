@@ -60,6 +60,18 @@ export async function GET(
           },
           orderBy: { createdAt: 'asc' }, // chronologique : du plus vieux au plus récent
         },
+        // Conversation libre élève ↔ staff (distincte des follow-ups de statut).
+        // On expose le rôle de l'expéditeur (pour aligner les bulles) mais jamais
+        // le nom du staff — l'anonymat côté staff est préservé, comme pour followUps.
+        messages: {
+          select: {
+            id:         true,
+            body:       true,
+            senderRole: true,
+            createdAt:  true,
+          },
+          orderBy: { createdAt: 'asc' },
+        },
       },
     })
 

@@ -220,6 +220,28 @@ class ApiService {
       throw Exception('Signalement introuvable');
     }
 
+    // Envoi d'un message par l'élève auteur sur son propre signalement.
+    // Retourne le message créé { id, body, senderRole, createdAt }.
+    Future<Map<String, dynamic>> sendReportMessage({
+      required String token,
+      required String id,
+      required String body,
+    }) async {
+      final response = await http.post(
+        Uri.parse('$baseUrl/reports/mine/$id/messages'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'body': body}),
+      );
+      if (response.statusCode != 201) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['error'] ?? 'Erreur lors de l\'envoi du message');
+      }
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+
     Future<void> cancelReport({required String token, required String id}) async {
       final response = await http.delete(
         Uri.parse('$baseUrl/reports/mine/$id'),
@@ -292,6 +314,28 @@ class ApiService {
         final error = jsonDecode(response.body);
         throw Exception(error['error'] ?? 'Erreur lors de la mise à jour');
       }
+    }
+
+    // Réponse d'un membre du staff à l'élève sur un signalement.
+    // Retourne le message créé { id, body, senderRole, createdAt }.
+    Future<Map<String, dynamic>> sendStaffReportMessage({
+      required String token,
+      required String id,
+      required String body,
+    }) async {
+      final response = await http.post(
+        Uri.parse('$baseUrl/reports/$id/messages'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({'body': body}),
+      );
+      if (response.statusCode != 201) {
+        final error = jsonDecode(response.body);
+        throw Exception(error['error'] ?? 'Erreur lors de l\'envoi du message');
+      }
+      return jsonDecode(response.body) as Map<String, dynamic>;
     }
 
     Future<void> escalateReport({

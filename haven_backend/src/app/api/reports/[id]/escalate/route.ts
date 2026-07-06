@@ -92,7 +92,10 @@ export async function POST(
     await db.$transaction([
       db.report.update({
         where: { id },
-        data:  { targetLevel: 'RECTORAT' },
+        // On passe le signalement au Rectorat tout en mémorisant son niveau
+        // d'origine : il reste ainsi comptabilisé dans les stats de ce niveau
+        // (professeur / direction) et de son école.
+        data:  { targetLevel: 'RECTORAT', escalatedFromLevel: report.targetLevel },
       }),
       db.followUp.create({
         data: {
