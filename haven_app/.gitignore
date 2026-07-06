@@ -43,3 +43,12 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Android signing — jamais commiter le keystore de production ni ses secrets
+/android/key.properties
+*.jks
+*.keystore
+
+# Firebase / Google Services — à générer localement via flutterfire configure
+google-services.json
+GoogleService-Info.plist
