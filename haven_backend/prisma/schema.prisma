@@ -8,8 +8,10 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // L'URL de connexion est fournie par prisma.config.ts (datasource.url) —
-  // Prisma 7 n'accepte plus `url` dans ce bloc.
+  // Le client runtime se connecte via l'adaptateur PrismaPg (voir src/lib/db.ts),
+  // qui ignore cette valeur — mais la CLI (generate/migrate) sur Prisma 6.19.3 exige
+  // un `url` déclaré ici pour valider le schéma, contrairement à Prisma 7.
+  url = env("DATABASE_URL")
 }
 
 enum Role {
