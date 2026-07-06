@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import { rateLimit, rateLimitKey } from '@/lib/rateLimit'
 
 const schema = z.object({
   email:      z.string().email().max(100),
@@ -9,9 +10,24 @@ const schema = z.object({
   parentCode: z.string().regex(/^HVN-P-[A-Z0-9]{6}$/, 'Code parent invalide.'),
 })
 
+// parentCode est un secret (6 caractères) qui donne accès aux signalements d'un
+// élève : sans limite, il serait brute-forçable. Même budget que /auth/login.
+const PARENT_LINK_LIMIT = 5
+const PARENT_LINK_WINDOW_MS = 15 * 60 * 1000
+
 // POST /api/auth/register/parent
 // Crée un compte parent et le lie à l'élève via son parentCode.
 export async function POST(request: Request) {
+  const { allowed, retryAfterSeconds } = rateLimit(
+    rateLimitKey(request, 'register-parent'), PARENT_LINK_LIMIT, PARENT_LINK_WINDOW_MS
+  )
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ error: `Trop de tentatives. Réessaie dans ${retryAfterSeconds}s.` }),
+      { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) } }
+    )
+  }
+
   const body = await request.json()
   const result = schema.safeParse(body)
   if (!result.success) {

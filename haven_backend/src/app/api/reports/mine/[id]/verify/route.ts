@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'crypto'
 import { db } from '@/lib/db'
 import { extractUser } from '@/lib/auth'
 import { computeIntegrityHash } from '@/lib/integrity'
@@ -50,7 +51,12 @@ export async function GET(
   }
 
   const recomputed = computeIntegrityHash(report)
-  const verified   = recomputed === report.integrityHash
+  // Comparaison à temps constant : timingSafeEqual exige des buffers de même
+  // longueur, d'où la vérification préalable (deux hex HMAC-SHA256 valides
+  // font toujours la même taille, mais on se protège d'une valeur corrompue).
+  const verified =
+    recomputed.length === report.integrityHash.length &&
+    timingSafeEqual(Buffer.from(recomputed), Buffer.from(report.integrityHash))
 
   return new Response(JSON.stringify({ verified }), {
     status: 200,

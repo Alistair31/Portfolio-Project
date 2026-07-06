@@ -35,7 +35,14 @@ export async function POST(
   }
 
   const body = await request.json().catch(() => ({}))
-  const { notes } = schema.parse(body)
+  const result = schema.safeParse(body)
+  if (!result.success) {
+    return new Response(JSON.stringify({ error: result.error.issues[0]?.message ?? 'Données invalides.' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+  const { notes } = result.data
 
   const { id } = await params
 

@@ -1,16 +1,9 @@
 import { db } from '@/lib/db'
-import { timingSafeEqual } from 'crypto'
+import { isAdmin } from '@/lib/adminAuth'
+import { rateLimit, rateLimitKey } from '@/lib/rateLimit'
 
-function isAdmin(request: Request): boolean {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ') || !process.env.ADMIN_SECRET) return false
-
-  const token = authHeader.split(' ')[1]
-  const tokenBuf  = Buffer.from(token)
-  const secretBuf = Buffer.from(process.env.ADMIN_SECRET)
-  if (tokenBuf.length !== secretBuf.length) return false
-  return timingSafeEqual(tokenBuf, secretBuf)
-}
+const ADMIN_LIMIT = 10
+const ADMIN_WINDOW_MS = 15 * 60 * 1000
 
 // PATCH /api/admin/deletion-requests/[id]
 // body: { "action": "approve" | "reject" }
@@ -18,6 +11,14 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { allowed, retryAfterSeconds } = rateLimit(rateLimitKey(request, 'admin'), ADMIN_LIMIT, ADMIN_WINDOW_MS)
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ error: `Trop de tentatives. Réessaie dans ${retryAfterSeconds}s.` }),
+      { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) } }
+    )
+  }
+
   if (!isAdmin(request)) {
     return new Response(JSON.stringify({ error: 'Non autorisé' }), {
       status: 401,

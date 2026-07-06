@@ -1,7 +1,8 @@
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import bcrypt from 'bcryptjs'
-import { timingSafeEqual } from 'crypto'
+import { isAdmin } from '@/lib/adminAuth'
+import { rateLimit, rateLimitKey } from '@/lib/rateLimit'
 
 // ---------------------------------------------------------------------------
 // Validation du body
@@ -15,23 +16,10 @@ const schema = z.object({
   schoolCode: z.string().min(1),
 })
 
-// ---------------------------------------------------------------------------
-// Vérification du token admin
-// Cette route est protégée par un secret statique (ADMIN_SECRET dans .env),
-// différent du JWT utilisateur. Elle n'est jamais appelée depuis l'app mobile —
-// uniquement par l'administrateur système (curl, Postman, script CI).
-// ---------------------------------------------------------------------------
-function isAdmin(request: Request): boolean {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader?.startsWith('Bearer ') || !process.env.ADMIN_SECRET) return false
-
-  const token = authHeader.split(' ')[1]
-  // Comparaison à temps constant : évite de révéler le secret via le temps de réponse
-  const tokenBuf  = Buffer.from(token)
-  const secretBuf = Buffer.from(process.env.ADMIN_SECRET)
-  if (tokenBuf.length !== secretBuf.length) return false
-  return timingSafeEqual(tokenBuf, secretBuf)
-}
+// Même budget que /auth/login : ADMIN_SECRET est un secret statique unique,
+// sans limite il serait brute-forçable en continu.
+const ADMIN_LIMIT = 10
+const ADMIN_WINDOW_MS = 15 * 60 * 1000
 
 // ---------------------------------------------------------------------------
 // POST /api/admin/users
@@ -39,6 +27,14 @@ function isAdmin(request: Request): boolean {
 // Protégé par ADMIN_SECRET — ne jamais exposer publiquement.
 // ---------------------------------------------------------------------------
 export async function POST(request: Request) {
+  const { allowed, retryAfterSeconds } = rateLimit(rateLimitKey(request, 'admin'), ADMIN_LIMIT, ADMIN_WINDOW_MS)
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ error: `Trop de tentatives. Réessaie dans ${retryAfterSeconds}s.` }),
+      { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) } }
+    )
+  }
+
   // Refus immédiat si le secret est absent ou incorrect
   if (!isAdmin(request)) {
     return new Response(JSON.stringify({ error: 'Non autorisé' }), {
