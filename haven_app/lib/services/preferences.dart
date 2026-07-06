@@ -1,8 +1,14 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 
 class PreferencesService {
+  // Le token d'accès et le refresh token sont des identifiants de session :
+  // ils vont dans le stockage chiffré (Keystore Android / Keychain iOS) plutôt
+  // que dans SharedPreferences (XML/JSON en clair, lisible sur un appareil root
+  // ou via une sauvegarde adb si allowBackup n'est pas désactivé).
+  static const _secureStorage = FlutterSecureStorage();
 
   Future<void> setOnboardingSeen() async {
     final prefs = await SharedPreferences.getInstance();
@@ -17,39 +23,27 @@ class PreferencesService {
   }
 
   Future<void> saveToken(String token) async {
-    final savTok = await SharedPreferences.getInstance();
-
-    savTok.setString('token', token);
+    await _secureStorage.write(key: 'token', value: token);
   }
 
   Future<String?> getToken() async {
-    final savTok = await SharedPreferences.getInstance();
-
-    return savTok.getString('token');
+    return _secureStorage.read(key: 'token');
   }
 
   Future<void> removeToken() async {
-    final byebye = await SharedPreferences.getInstance();
-
-    byebye.remove('token');
+    await _secureStorage.delete(key: 'token');
   }
 
   Future<void> saveRefreshToken(String refreshToken) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    prefs.setString('refreshToken', refreshToken);
+    await _secureStorage.write(key: 'refreshToken', value: refreshToken);
   }
 
   Future<String?> getRefreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    return prefs.getString('refreshToken');
+    return _secureStorage.read(key: 'refreshToken');
   }
 
   Future<void> removeRefreshToken() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    prefs.remove('refreshToken');
+    await _secureStorage.delete(key: 'refreshToken');
   }
 
   Future<void> saveIntegrityHash(String reportId, String hash) async {

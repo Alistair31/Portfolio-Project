@@ -1,7 +1,21 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     // Flutter gère Kotlin en interne — kotlin-android n'est plus nécessaire ici
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Signature de release : lue depuis key.properties (non commité, voir .gitignore
+// et key.properties.example). Absent en dev -> fallback sur la clé debug pour
+// que `flutter run --release` continue de fonctionner, mais un vrai keystore
+// est requis avant toute publication (voir rapport_bugs.md, S11).
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+val hasReleaseKeystore = keystorePropertiesFile.exists()
+if (hasReleaseKeystore) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
 android {
@@ -30,11 +44,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Utilise le vrai keystore si key.properties existe, sinon retombe sur
+            // la clé debug (dev uniquement — ne jamais publier un build signé debug).
+            signingConfig = if (hasReleaseKeystore) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
         }
     }
 }
