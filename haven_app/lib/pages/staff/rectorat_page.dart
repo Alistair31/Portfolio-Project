@@ -207,7 +207,7 @@ class _RectoratPageState extends State<RectoratPage> {
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
                     sliver: SliverList.separated(
                       itemCount: bySchool.isEmpty ? 1 : bySchool.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      separatorBuilder: (_, _) => const SizedBox(height: 8),
                       itemBuilder: (_, i) {
                         if (bySchool.isEmpty) {
                           return const Center(

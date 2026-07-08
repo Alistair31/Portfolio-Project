@@ -5,7 +5,7 @@ import '../../widgets/haven_bottom_bar.dart';
 import '../report/report_target_page.dart';
 import 'account_page.dart';
 import 'resources_page.dart';
-import 'suivi_page.dart';
+import 'follow_up_page.dart';
 
 /// Écran 12a · Espace Safe — respiration + contacts disponibles.
 class SafeSpacePage extends StatelessWidget {
@@ -156,7 +156,7 @@ class SafeSpacePage extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
                 sliver: SliverList.separated(
                   itemCount: _contacts.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (_, i) => _ContactRow(contact: _contacts[i]),
                 ),
               ),

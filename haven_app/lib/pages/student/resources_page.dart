@@ -113,7 +113,7 @@ class ResourcesPage extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 120),
                 sliver: SliverList.separated(
                   itemCount: _tiles.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
                   itemBuilder: (_, i) => _ResourceTile(tile: _tiles[i]),
                 ),
               ),

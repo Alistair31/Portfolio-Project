@@ -1,8 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
+
+// Intervalle de rafraîchissement silencieux du fil de conversation. Pas de
+// WebSocket/SSE côté backend : un polling léger est le moyen le plus simple
+// de voir arriver les messages du staff sans devoir en envoyer un soi-même.
+const _pollInterval = Duration(seconds: 4);
 
 /// Écran 11 · Échanger — messagerie élève ↔ équipe pHARe.
 /// Conversation bidirectionnelle : le contenu du signalement, les follow-ups de
@@ -23,6 +30,7 @@ class _ExchangePageState extends State<ExchangePage> {
   bool _sending = false;
   final _inputController = TextEditingController();
   final _scrollController = ScrollController();
+  Timer? _pollTimer;
 
   static const _roleLabels = {
     'TEACHER':      'Professeur principal',
@@ -41,10 +49,12 @@ class _ExchangePageState extends State<ExchangePage> {
   void initState() {
     super.initState();
     _load();
+    _pollTimer = Timer.periodic(_pollInterval, (_) => _poll());
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _inputController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -61,6 +71,24 @@ class _ExchangePageState extends State<ExchangePage> {
       }
     } catch (_) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  // Rafraîchit silencieusement le fil en arrière-plan (le staff peut répondre
+  // à tout moment) : pas de spinner, pas d'interruption de la saisie en cours.
+  // Ne fait défiler vers le bas que si de nouveaux messages sont vraiment arrivés.
+  Future<void> _poll() async {
+    if (_sending) return;
+    final token = SessionService().getToken();
+    if (token == null) return;
+    final previousCount = _conversation.length;
+    try {
+      final report = await ApiService().getReportDetail(token: token, id: widget.reportId);
+      if (!mounted) return;
+      setState(() => _report = report);
+      if (_conversation.length > previousCount) _scrollToBottom();
+    } catch (_) {
+      // Échec silencieux : nouvelle tentative au prochain tick.
     }
   }
 

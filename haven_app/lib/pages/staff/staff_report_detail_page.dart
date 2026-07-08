@@ -1,8 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../services/api_service.dart';
 import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
+
+// Pas de WebSocket/SSE côté backend : un polling léger permet de voir arriver
+// les nouveaux messages de l'élève sans devoir répondre ou recharger la page.
+const _pollInterval = Duration(seconds: 4);
 
 class StaffReportDetailPage extends StatefulWidget {
   final String reportId;
@@ -18,6 +24,7 @@ class _StaffReportDetailPageState extends State<StaffReportDetailPage> {
   bool _updating = false;
   bool _sendingMessage = false;
   final _msgController = TextEditingController();
+  Timer? _pollTimer;
 
   static const _typeLabels = {
     'PHYSICAL': 'Violence physique',
@@ -46,15 +53,6 @@ class _StaffReportDetailPageState extends State<StaffReportDetailPage> {
     'FULLY_ANONYMOUS':       'Totalement anonyme',
   };
 
-  static Color _statusColor(String s) {
-    switch (s) {
-      case 'PENDING':     return const Color(0xFFE89B4E);
-      case 'IN_PROGRESS': return const Color(0xFF4A90D9);
-      case 'CLOSED':      return AppColors.eucalyptus;
-      default:            return AppColors.edward;
-    }
-  }
-
   static String _formatDate(String iso) {
     final d = DateTime.parse(iso).toLocal();
     const jours = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
@@ -76,10 +74,12 @@ class _StaffReportDetailPageState extends State<StaffReportDetailPage> {
   void initState() {
     super.initState();
     _load();
+    _pollTimer = Timer.periodic(_pollInterval, (_) => _poll());
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _msgController.dispose();
     super.dispose();
   }
@@ -92,6 +92,20 @@ class _StaffReportDetailPageState extends State<StaffReportDetailPage> {
       if (mounted) setState(() { _report = report; _loading = false; });
     } catch (_) {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  // Rafraîchit silencieusement en arrière-plan (statut, follow-ups, messages) :
+  // pas de spinner, n'interrompt pas un envoi ou une mise à jour de statut en cours.
+  Future<void> _poll() async {
+    if (_sendingMessage || _updating) return;
+    final token = SessionService().getToken();
+    if (token == null) return;
+    try {
+      final report = await ApiService().getStaffReportDetail(token: token, id: widget.reportId);
+      if (mounted) setState(() => _report = report);
+    } catch (_) {
+      // Échec silencieux : nouvelle tentative au prochain tick.
     }
   }
 
@@ -259,13 +273,13 @@ class _StaffReportDetailPageState extends State<StaffReportDetailPage> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
               decoration: BoxDecoration(
-                color: _statusColor(status).withAlpha(26),
+                color: AppColors.statusColor(status).withAlpha(26),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: _statusColor(status).withAlpha(80)),
+                border: Border.all(color: AppColors.statusColor(status).withAlpha(80)),
               ),
               child: Text(
                 _statusLabels[status] ?? status,
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _statusColor(status)),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.statusColor(status)),
               ),
             ),
           ),
@@ -329,7 +343,7 @@ class _StaffReportDetailPageState extends State<StaffReportDetailPage> {
               return _FollowUpTile(
                 staffName:    staff?['name'] as String? ?? '—',
                 newStatus:    _statusLabels[fuStatus] ?? fuStatus,
-                statusColor:  _statusColor(fuStatus),
+                statusColor:  AppColors.statusColor(fuStatus),
                 notes:        fu['notes'] as String,
                 dateLabel:    _formatShort(fu['createdAt'] as String),
               );

@@ -41,15 +41,6 @@ class _StaffHomePageState extends State<StaffHomePage> {
     'OTHER':    'Autre',
   };
 
-  static Color _statusColor(String status) {
-    switch (status) {
-      case 'PENDING':     return const Color(0xFFE89B4E);
-      case 'IN_PROGRESS': return const Color(0xFF4A90D9);
-      case 'CLOSED':      return AppColors.eucalyptus;
-      default:            return AppColors.edward;
-    }
-  }
-
   static String _formatDate(String iso) {
     final d = DateTime.parse(iso).toLocal();
     const mois = ['jan.', 'fév.', 'mars', 'avr.', 'mai', 'juin',
@@ -297,7 +288,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: _statusColor(status).withAlpha(26),
+                                        color: AppColors.statusColor(status).withAlpha(26),
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
@@ -305,7 +296,7 @@ class _StaffHomePageState extends State<StaffHomePage> {
                                         style: TextStyle(
                                           fontSize: 11,
                                           fontWeight: FontWeight.w700,
-                                          color: _statusColor(status),
+                                          color: AppColors.statusColor(status),
                                         ),
                                       ),
                                     ),
