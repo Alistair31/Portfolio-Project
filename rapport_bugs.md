@@ -263,3 +263,147 @@
 **Description :** `_canCancel` est un getter recalculé uniquement lors d'un rebuild (déclenché par `setState` dans `_load`, `_cancel` ou `_checkIntegrity`). Aucune minuterie ne forçait de rebuild à l'instant précis où les 5 minutes s'écoulaient : le bouton "Annuler le signalement" restait affiché indéfiniment tant que l'élève ne provoquait pas un rebuild par une autre interaction.
 **Impact :** Un élève laissant la page ouverte au-delà du délai (ou y revenant plus tard sans qu'un rebuild ait eu lieu) voyait toujours le bouton d'annulation actif. Un appui déclenchait un appel `DELETE /api/reports/mine/[id]` rejeté côté serveur (`409 — Le délai d'annulation de 5 minutes est dépassé.`), une erreur confuse puisque l'UI n'avait rien signalé.
 **Correction appliquée :** Ajout d'un `Timer` (`_cancelExpiry`) programmé dans `_scheduleCancelExpiry()` pour se déclencher exactement à l'expiration de la fenêtre de 5 minutes et forcer un `setState` qui recalcule `_canCancel`, masquant automatiquement le bouton. Le timer est annulé dans `dispose()` pour éviter tout `setState` après démontage du widget.
+
+---
+
+### Bug #25 — « Parler à l'équipe » : réponse élève non fonctionnelle ✅ RÉSOLU
+
+**Fichiers :**
+
+- `haven_backend/prisma/schema.prisma` (+ migration `add_message_model`)
+- `haven_backend/src/app/api/reports/mine/[id]/messages/route.ts` (nouveau)
+- `haven_backend/src/app/api/reports/[id]/messages/route.ts` (nouveau)
+- `haven_backend/src/app/api/reports/mine/[id]/route.ts`, `haven_backend/src/app/api/reports/[id]/route.ts` (GET détail)
+- `haven_app/lib/services/api_service.dart`
+- `haven_app/lib/pages/student/exchange_page.dart`
+- `haven_app/lib/pages/staff/staff_report_detail_page.dart`
+
+**Sévérité :** HIGH | **Confiance :** 10/10
+**Description :** Le flux élève → « Mes signalements » → détail → « Parler à l'équipe » ouvrait `ExchangePage`, dont la zone de saisie était purement décorative : le bouton d'envoi affichait seulement un `SnackBar` « Fonctionnalité de réponse bientôt disponible. » et vidait le champ, sans aucun appel réseau. Aucun endpoint de message élève n'existait, et le schéma Prisma ne disposait que de `FollowUp` (action de statut du staff, avec `staffId` et `newStatus` obligatoires) — impossible d'y stocker un message d'élève. La messagerie annoncée était donc entièrement non implémentée.
+**Impact :** Un élève en difficulté (potentiellement victime de harcèlement) croyait pouvoir dialoguer avec l'adulte de confiance de son établissement, mais ses messages n'étaient jamais envoyés ni enregistrés. Fonctionnalité centrale du produit inopérante et trompeuse.
+**Correction appliquée :** Implémentation d'une messagerie bidirectionnelle complète.
+
+- **Modèle `Message`** ajouté (`body`, `senderRole`, `reportId`, `senderId`, `createdAt`, index `[reportId, createdAt]`, cascade sur `Report` et `User`) + migration `add_message_model`. Distinct de `FollowUp` : conversation libre dans les deux sens.
+- **`POST /api/reports/mine/[id]/messages`** (élève) : vérifie l'appartenance du signalement, crée le message (`senderRole = STUDENT`), notifie le staff ciblé (même rôle, même école) + push, non-bloquant.
+- **`POST /api/reports/[id]/messages`** (staff) : même contrôle d'accès que le GET staff (école + `targetLevel === role`), crée le message avec le rôle de l'agent, notifie l'élève auteur + push.
+- **GET détail élève et staff** : ajout de `messages` (id, body, senderRole, createdAt) — seul le rôle de l'expéditeur est exposé, jamais le nom du staff (anonymat préservé, cohérent avec `followUps`).
+- **`ExchangePage` (élève)** : bouton d'envoi câblé sur `sendReportMessage`, fusion chronologique description + follow-ups + messages, auto-scroll, état d'envoi.
+- **`StaffReportDetailPage` (staff)** : nouvelle section « Conversation avec l'élève » (bulles élève/staff) + zone de réponse (`sendStaffReportMessage`).
+
+**Effet de bord découvert pendant l'implémentation :** cette branche avait retiré `url = env("DATABASE_URL")` du bloc `datasource` de `schema.prisma` en pensant Prisma 7 déjà en place, ce qui cassait `prisma generate`/`migrate` pour quiconque avait le CLI 6.19.3 réellement installé (cf. S12 ci-dessous) — la ligne a été restaurée lors de la fusion avec la branche `Gabriel`.
+
+---
+
+## Audit de sécurité — Deuxième passe (2026-07-03)
+
+### S5. Brute force du `parentCode` → accès aux signalements d'un élève ✅ RÉSOLU
+
+**Fichier :** `haven_backend/src/app/api/auth/register/parent/route.ts`
+**Sévérité :** HIGH | **Confiance :** 9/10
+**Description :** Contrairement à `login` et `register`, cette route n'appelait aucun `rateLimit`. Le `parentCode` (6 caractères, ~1 milliard de combinaisons possibles, généré par `Math.random()`) est la seule protection avant de lier un compte parent à un élève et de donner accès à ses signalements via `GET /api/parent/reports`.
+**Impact :** Un attaquant pouvait scripter des tentatives à volonté sur des emails jetables ; toute réussite donnait accès aux signalements de harcèlement d'un mineur — contournement direct de la confidentialité, cœur de la promesse de l'application.
+**Correction appliquée :** Ajout du même throttling que `/auth/login` (`rateLimit`/`rateLimitKey`, 5 tentatives / 15 min / IP, scope `register-parent`), avec réponse `429` et en-tête `Retry-After`.
+
+---
+
+### S6. Absence de rate limiting sur les routes admin (`ADMIN_SECRET`) + fuite de longueur du secret ✅ RÉSOLU
+
+**Fichiers :** `haven_backend/src/app/api/admin/users/route.ts`, `admin/deletion-requests/route.ts`, `admin/deletion-requests/[id]/route.ts`
+**Sévérité :** MEDIUM | **Confiance :** 8/10
+**Description :** Aucune de ces trois routes n'était protégée par `rateLimit`, permettant un nombre illimité de tentatives par seconde sur `ADMIN_SECRET` (le bearer token qui autorise la création de comptes staff et la suppression de comptes arbitraires). De plus, `isAdmin()` retournait `false` immédiatement si `token.length !== secretBuf.length`, avant l'appel à `timingSafeEqual` — ce court-circuit fuit la longueur exacte du secret par le temps de réponse, affaiblissant la garantie "temps constant" visée par le commentaire du code.
+**Impact :** Aujourd'hui limité (le secret en `.env` est long et aléatoire), mais aucune défense en profondeur si le secret est un jour plus faible ou changé.
+**Correction appliquée :**
+
+- Ajout du throttling (`rateLimit`, 10 tentatives / 15 min / IP, scope partagé `admin` entre les trois routes) avant toute vérification du secret.
+- Extraction de `isAdmin()` dans un module partagé `haven_backend/src/lib/adminAuth.ts`, avec une comparaison qui hash d'abord les deux valeurs (digest SHA-256 de taille fixe) avant `timingSafeEqual`, éliminant la branche de longueur qui fuitait de l'information.
+
+---
+
+### S7. Validation non gérée dans `POST /api/reports/[id]/escalate` ✅ RÉSOLU
+
+**Fichier :** `haven_backend/src/app/api/reports/[id]/escalate/route.ts`
+**Sévérité :** MEDIUM | **Confiance :** 8/10
+**Description :** La route utilisait `schema.parse(body)` (qui lève une exception) au lieu de `schema.safeParse`, et l'appel était situé avant le bloc `try/catch` du handler — contrairement à toutes les autres routes du projet. Une valeur de `notes` invalide (ex. un nombre au lieu d'une chaîne) provoquait une exception `ZodError` non interceptée par le `catch` de la fonction, renvoyant une 500 générique de Next.js au lieu du contrat d'erreur `{ error: '...' }` habituel.
+**Impact :** Incohérence avec le reste de l'API et surface de plantage non gérée pour une entrée mal formée.
+**Correction appliquée :** Remplacement par `schema.safeParse(body)` avec retour explicite d'une erreur `400`, aligné sur le pattern utilisé partout ailleurs.
+
+---
+
+### S8. Comparaison non constante dans la vérification d'intégrité ✅ RÉSOLU
+
+**Fichier :** `haven_backend/src/app/api/reports/mine/[id]/verify/route.ts`
+**Sévérité :** LOW | **Confiance :** 7/10
+**Description :** `recomputed === report.integrityHash` utilisait une comparaison de chaînes standard au lieu de `timingSafeEqual`, alors que le pattern à temps constant est déjà utilisé ailleurs dans le code pour des comparaisons sensibles.
+**Impact :** Minime — forger un hash nécessite déjà de connaître `REPORT_INTEGRITY_SECRET` (HMAC-SHA256) — mais incohérent avec le reste du projet.
+**Correction appliquée :** Remplacement par `timingSafeEqual` sur les buffers des deux hex, avec une vérification préalable de longueur égale (requise par `timingSafeEqual`, qui lève une exception sur des buffers de tailles différentes).
+
+---
+
+### S9. Token JWT et refresh token stockés en clair dans `SharedPreferences` ✅ RÉSOLU
+
+**Fichier :** `haven_app/lib/services/preferences.dart`
+**Sévérité :** MEDIUM | **Confiance :** 8/10
+**Description :** `saveToken()` et `saveRefreshToken()` utilisaient `SharedPreferences`, qui stocke les données en clair (XML/JSON non chiffré) dans le stockage privé de l'application, au lieu d'un stockage chiffré dédié aux identifiants de session.
+**Impact :** Sur un appareil compromis (root) ou via une extraction physique du stockage, les tokens de session étaient directement lisibles en clair.
+**Correction appliquée :** Migration de `saveToken`/`getToken`/`removeToken` et `saveRefreshToken`/`getRefreshToken`/`removeRefreshToken` vers `flutter_secure_storage` (Keystore Android / Keychain iOS). Ajout de la dépendance `flutter_secure_storage: ^9.2.4` dans `pubspec.yaml`.
+
+---
+
+### S10. `android:allowBackup` non désactivé (valeur par défaut `true`) ✅ RÉSOLU
+
+**Fichier :** `haven_app/android/app/src/main/AndroidManifest.xml`
+**Sévérité :** LOW | **Confiance :** 7/10
+**Description :** L'attribut `android:allowBackup` n'était pas défini, donc Android applique sa valeur par défaut (`true`), autorisant potentiellement l'extraction des données de l'application (y compris les préférences) via `adb backup` sur un appareil avec le débogage USB activé.
+**Impact :** Combiné à S9 (avant correction), un accès physique à un appareil en mode debug aurait permis d'extraire les tokens de session.
+**Correction appliquée :** Ajout de `android:allowBackup="false"` et `android:fullBackupContent="false"` sur l'élément `<application>`.
+
+---
+
+### S11. APK release signé avec la clé de débogage ⚠️ PARTIELLEMENT RÉSOLU
+
+**Fichier :** `haven_app/android/app/build.gradle.kts`
+**Sévérité :** MEDIUM | **Confiance :** 9/10
+**Description :** Le bloc `buildTypes { release { ... } }` utilisait `signingConfigs.getByName("debug")` sans condition — un TODO du template Flutter signalait déjà cette limitation. Un build "release" signé avec la clé debug ne garantit pas l'authenticité des mises à jour et serait de toute façon refusé par les stores.
+**Impact :** Non exploitable tant que l'app n'est pas distribuée, mais bloquant avant toute publication.
+**Correction appliquée :** Le build script charge désormais un `key.properties` (non commité, cf. `.gitignore` et `key.properties.example` ajoutés) s'il existe, et configure une vraie `signingConfig("release")` à partir de celui-ci ; à défaut, il retombe sur la clé debug pour ne pas casser `flutter run --release` en développement.
+**Action restante (ne peut pas être automatisée) :** générer un keystore de production avec `keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload`, puis créer `haven_app/android/key.properties` à partir de `key.properties.example` avec le mot de passe choisi. Ce mot de passe ne doit être connu que de l'équipe et ne doit jamais être commité.
+
+---
+
+### S12. Version Prisma incohérente entre branches après une fusion ✅ RÉSOLU
+
+**Fichier :** `haven_backend/prisma/schema.prisma`
+**Sévérité :** MEDIUM | **Confiance :** 9/10
+**Description :** La branche `Jarod` avait retiré `url = env("DATABASE_URL")` du bloc `datasource`, en anticipant Prisma 7 (qui n'accepte plus `url` à cet endroit). Mais ce projet reste sur **Prisma CLI 6.19.3** (rétrogradé exprès au bug #4), qui exige encore ce `url` pour que `prisma generate`/`migrate` fonctionnent. Après la fusion avec `Gabriel`, `prisma generate` et `prisma migrate status` échouaient tous les deux avec `P1012 — Argument "url" is missing`.
+**Impact :** Le client Prisma n'a pas pu être régénéré avec le nouveau champ `escalatedFromLevel` ni le modèle `Message`, et les migrations correspondantes n'ont pas pu être appliquées à la base — cassant la page de statistiques (`stats/route.ts`, `stats/timeline/route.ts`) qui référence `escalatedFromLevel`.
+**Correction appliquée :** Restauration de `url = env("DATABASE_URL")` dans le bloc `datasource` (le runtime continue d'utiliser l'adaptateur `PrismaPg` indépendamment de cette valeur — aucun changement de comportement applicatif). `npx prisma generate` régénéré, puis `npx prisma migrate deploy` appliqué sur la base distante (`db.prisma.io`) pour les 2 migrations en attente (`add_message_model`, `add_escalated_from_level`), sans reset — `migrate status` confirme "Database schema is up to date".
+
+---
+
+## 26. `Install Android SDK Platform 34 (revision 3) failed` — échec transitoire de build Gradle
+
+**Contexte :** Après l'ajout de `flutter_secure_storage` (S9), `flutter run` échouait sur `:flutter_secure_storage:generateDebugRFile` avec `Failed to install the following SDK components: platforms;android-34`.
+**Erreur :** Le même symptôme que le bug #9 (Build Tools 35 corrompus) : le composant SDK s'était en fait déjà téléchargé intégralement sur le disque (`android.jar`, `package.xml` présents et cohérents dans `platforms/android-34`), mais l'étape de vérification post-téléchargement de Gradle a échoué — cause probable : un antivirus (Windows Defender) verrouillant brièvement un fichier pendant le scan.
+**Impact :** Build Android bloqué à la première tentative après l'ajout d'une nouvelle dépendance native.
+**Correction :** `flutter clean` + `flutter pub get` + `flutter build apk --debug` — le build est passé du premier coup, confirmant que les fichiers SDK étaient déjà valides et que l'échec initial était ponctuel.
+**Prévention :** Comme pour le bug #9, ajouter le dossier du SDK Android (`%LOCALAPPDATA%\Android\sdk`) aux exclusions de l'antivirus pour éviter que ce faux échec ne se reproduise à chaque nouvelle installation de composant SDK.
+
+---
+
+## 27. Un staff (RECTORAT/TEACHER/DIRECTOR_CPE) se connectant pour la première fois sur un appareil atterrit sur une interface élève vide
+
+**Fichiers :** `haven_app/lib/pages/onboarding/onboarding_page.dart`, `haven_app/lib/pages/splashscreen/haven_start.dart`
+**Erreur :** `hasSeenOnboarding()` est un flag stocké **par appareil**, pas par compte. Au premier login d'un rôle quelconque sur un nouvel appareil, `login_page.dart` affiche `OnboardingFlow` (`_handleLogin()`, branche `!onboardWait`) sans lui transmettre le rôle. À la fin de l'onboarding, `_finish()` redirigeait inconditionnellement vers `StudentHomePage()`, quel que soit le rôle réel de l'utilisateur connecté.
+**Impact :** Un membre du staff (RECTORAT, TEACHER ou DIRECTOR_CPE) se connectant pour la première fois sur un appareil voyait l'onboarding puis atterrissait sur l'interface élève — vide ou cassée, puisque les appels API de cette page sont scopés à un compte STUDENT et échouent (403) pour un autre rôle.
+**Correction appliquée :** Extraction d'une fonction partagée `homeForRole(String role)` (`haven_app/lib/services/role_router.dart`), reprenant le `switch` déjà utilisé dans `HavenStart._goToLogin()` (bug #21). `onboarding_page.dart` lit maintenant le rôle via `SessionService().getRole()` (déjà peuplé par `login_page.dart` avant l'affichage de l'onboarding) et route via `homeForRole()` au lieu de `StudentHomePage()` en dur. `HavenStart.dart` a été aligné sur la même fonction pour éliminer la duplication du switch entre les deux fichiers.
+**Tests :** `test/role_router_test.dart` — couvre les 5 rôles et le cas d'un rôle inconnu/vide (fallback vers `LoginPage`).
+
+---
+
+## 28. Messagerie élève ↔ staff : nouveaux messages invisibles sans renvoyer un message ou recharger
+
+**Fichiers :** `haven_app/lib/pages/student/exchange_page.dart`, `haven_app/lib/pages/staff/staff_report_detail_page.dart`
+**Erreur :** Le fil de conversation n'était rechargé qu'à l'ouverture de la page (`initState`) et après l'envoi d'un message par l'utilisateur courant (`await _load()` dans `_send()`/`_sendMessage()`). Sans WebSocket/SSE côté backend, rien ne déclenchait de rafraîchissement quand c'était l'*autre* partie qui écrivait.
+**Impact :** Un élève ou un membre du staff ne voyait pas les nouveaux messages de l'autre partie tant qu'il n'envoyait pas lui-même un message ou ne rechargeait pas la page.
+**Correction appliquée :** Ajout d'un `Timer.periodic` (4s) dans les deux pages, démarré dans `initState()` et annulé dans `dispose()`, qui rafraîchit silencieusement les données (pas de spinner, pas d'interruption de la saisie). Sur `ExchangePage`, le défilement automatique ne se déclenche que si le nombre de messages a réellement augmenté. Le polling est mis en pause pendant un envoi ou une mise à jour de statut en cours pour éviter les appels concurrents inutiles.
+**Limite connue :** reste du polling, pas du temps réel — acceptable à l'échelle actuelle de l'app, mais à revoir si le volume de messages augmente.
