@@ -365,7 +365,7 @@ At the end of each sprint, the team demonstrates completed features to stakehold
 
 | Task | Planned | Completed | Notes |
 | --- | --- | --- | --- |
-| Unit test suite | ✅ | ✅ | 68 Flutter tests — `SessionService`, `PreferencesService`, models, widgets |
+| Unit test suite | ✅ | ✅ | 83 Flutter tests across 10 files — `SessionService`, `PreferencesService`, API models, `ApiService` (login/reports/messaging, mocked via `http.runWithClient`), `AppColors.statusColor`, `homeForRole` role routing, `ParentPortalPage`, `ReportSummaryPage`, `SafetyPage`, default widget test |
 | Critical bug fixes | ✅ | ✅ | Bugs #21, #22, #23 fixed (auto-login, trackingCode, dead method) |
 | Final QA pass | ✅ | ✅ | 0 compilation errors, 0 critical warnings, 68 / 68 tests pass |
 | In-app notifications | ✅ | ⚠️ Partial | `GET/PATCH /api/notifications` endpoints created — Flutter UI not implemented |
@@ -401,6 +401,25 @@ At the end of each sprint, the team demonstrates completed features to stakehold
 | Bug | File | Fix |
 | --- | --- | --- |
 | Bug #24 — Cancel button stayed visible past the 5-minute window | `report_detail_page.dart` | Added a `Timer` (`_scheduleCancelExpiry`) that triggers a rebuild exactly when the window expires, hiding the button automatically; cancelled in `dispose()` to avoid `setState` after unmount. See `rapport_bugs.md`. |
+| Bug #25 — "Parler à l'équipe" sent nothing (decorative input only) | `exchange_page.dart`, `staff_report_detail_page.dart`, new `Message` model | Implemented full two-way messaging between student and staff (`POST /api/reports/[id]/messages`, `POST /api/reports/mine/[id]/messages`). See `rapport_bugs.md`. |
+| Bug #26 — Transient Gradle/SDK build failure after adding `flutter_secure_storage` | N/A (tooling) | Same root cause as bug #9 (antivirus locking a file mid-install); `flutter clean` + rebuild resolved it. |
+
+---
+
+### Post-Sprint 3 — Fonctionnalités additionnelles (hors plan initial)
+
+Plusieurs fonctionnalités ont été livrées après la clôture du Sprint 3 et n'étaient pas prévues dans le plan de sprints ci-dessus :
+
+| Fonctionnalité | État | Détails |
+| --- | --- | --- |
+| Messagerie élève ↔ staff | ✅ Livré | Voir Bug #25 ci-dessus. `ExchangePage` (élève) et section "Conversation" de `StaffReportDetailPage` (staff). |
+| Rôle Parent (inscription, lien élève, consultation) | ✅ Livré | `POST /api/auth/register/parent`, modèle `ParentStudentLink`, `parent_home_page.dart` / `parent_portal_page.dart`. Non couvert par le plan de sprint initial (student/staff uniquement). |
+| Notifications push (FCM) | ✅ Livré côté backend | `auth/fcm/route.ts`, `lib/push.ts`, token FCM géré dans `ApiService`. L'UI de notifications in-app reste non implémentée (bouton `onNotifications` toujours no-op dans `student_home_page.dart`) — cette partie du constat Sprint 3 reste valide. |
+| Refresh tokens + rate limiting | ✅ Livré | Rotation des refresh tokens (`auth/refresh`, `auth/logout`), et rate limiting (`lib/rateLimit.ts`) sur `login`, `register`, `register/parent` et les routes `admin/*`. |
+| Deuxième audit de sécurité (S5-S12) | ✅ Livré | Voir `rapport_bugs.md` — brute force `parentCode`, rate limiting admin, stockage sécurisé des tokens (`flutter_secure_storage`), `allowBackup`, signature de release, incohérence de version Prisma post-fusion. |
+| Factorisation `requireRole()`/`jsonError()` côté backend | ✅ Livré | `haven_backend/src/lib/auth.ts` — élimine la duplication du tableau `STAFF_ROLES` et du boilerplate 401/403 sur `stats/route.ts`, `stats/timeline/route.ts`, `reports/[id]/route.ts`, `reports/[id]/messages/route.ts`. |
+
+**À noter pour la suite :** ces livraisons n'ayant pas été planifiées, elles n'ont pas de critères d'acceptation formels ni de couverture dans les Suites de tests 1-5 ci-dessous (toujours `_TBD_`).
 
 ---
 
