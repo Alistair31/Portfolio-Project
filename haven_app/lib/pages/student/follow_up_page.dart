@@ -154,7 +154,7 @@ class _SuiviPageState extends State<SuiviPage> {
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 120),
                     sliver: SliverList.separated(
                       itemCount: _reports.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      separatorBuilder: (_, _) => const SizedBox(height: 10),
                       itemBuilder: (_, i) {
                         final r = _reports[i];
                         return _ReportCard(
