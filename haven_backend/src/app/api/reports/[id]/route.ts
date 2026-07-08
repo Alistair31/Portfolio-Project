@@ -1,11 +1,8 @@
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import { applyAnonymity } from '@/lib/anonymize'
-import { extractUser } from '@/lib/auth'
+import { requireRole, STAFF_ROLES } from '@/lib/auth'
 import { sendPushToUsers } from '@/lib/push'
-
-// Rôles autorisés à consulter et modifier les signalements
-const STAFF_ROLES = ['TEACHER', 'DIRECTOR_CPE', 'RECTORAT']
 
 // ---------------------------------------------------------------------------
 // GET /api/reports/[id]
@@ -16,20 +13,8 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = extractUser(request)
-  if (!user) {
-    return new Response(JSON.stringify({ error: 'Non autorisé' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-
-  if (!STAFF_ROLES.includes(user.role)) {
-    return new Response(JSON.stringify({ error: 'Accès refusé' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
+  const user = requireRole(request, STAFF_ROLES)
+  if (user instanceof Response) return user
 
   const { id } = await params
 
@@ -141,24 +126,16 @@ const patchSchema = z.object({
 // Accessible uniquement au staff du même établissement.
 // On ne peut pas repasser un signalement en PENDING une fois traité.
 // ---------------------------------------------------------------------------
+// Le RECTORAT ne modifie jamais directement un statut — il ne fait que recevoir
+// des signalements escaladés (voir escalate/route.ts).
+const PATCH_ROLES = ['TEACHER', 'DIRECTOR_CPE'] as const
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = extractUser(request)
-  if (!user) {
-    return new Response(JSON.stringify({ error: 'Non autorisé' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-
-  if (!STAFF_ROLES.includes(user.role) || user.role === 'RECTORAT') {
-    return new Response(JSON.stringify({ error: 'Accès refusé' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
+  const user = requireRole(request, PATCH_ROLES)
+  if (user instanceof Response) return user
 
   const body = await request.json()
   const result = patchSchema.safeParse(body)

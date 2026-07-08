@@ -1,28 +1,15 @@
 import { db } from '@/lib/db'
-import { extractUser } from '@/lib/auth'
+import { requireRole, STAFF_ROLES } from '@/lib/auth'
 import { Prisma } from '@/generated/prisma/client'
 
-const STAFF_ROLES = ['TEACHER', 'DIRECTOR_CPE', 'RECTORAT'] as const
 type Period = 'week' | 'month' | 'year'
 
 const JOURS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
 const MOIS  = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
 
 export async function GET(request: Request) {
-  const user = extractUser(request)
-  if (!user) {
-    return new Response(JSON.stringify({ error: 'Non autorisé' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-
-  if (!STAFF_ROLES.includes(user.role as (typeof STAFF_ROLES)[number])) {
-    return new Response(JSON.stringify({ error: 'Accès refusé' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
+  const user = requireRole(request, STAFF_ROLES)
+  if (user instanceof Response) return user
 
   try {
     const { searchParams } = new URL(request.url)

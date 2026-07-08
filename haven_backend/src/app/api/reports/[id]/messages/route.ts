@@ -1,10 +1,7 @@
 import { db } from '@/lib/db'
 import { z } from 'zod'
-import { extractUser } from '@/lib/auth'
+import { requireRole, STAFF_ROLES } from '@/lib/auth'
 import { sendPushToUsers } from '@/lib/push'
-
-// Rôles autorisés à répondre à un signalement
-const STAFF_ROLES = ['TEACHER', 'DIRECTOR_CPE', 'RECTORAT']
 
 // ---------------------------------------------------------------------------
 // POST /api/reports/[id]/messages
@@ -20,20 +17,8 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = extractUser(request)
-  if (!user) {
-    return new Response(JSON.stringify({ error: 'Non autorisé' }), {
-      status: 401,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-
-  if (!STAFF_ROLES.includes(user.role)) {
-    return new Response(JSON.stringify({ error: 'Accès refusé' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
+  const user = requireRole(request, STAFF_ROLES)
+  if (user instanceof Response) return user
 
   const body = await request.json()
   const result = schema.safeParse(body)

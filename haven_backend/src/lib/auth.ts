@@ -12,6 +12,32 @@ export function extractUser(request: Request): { id: string; role: string } | nu
   }
 }
 
+// Rôles staff — dupliqué à l'identique dans plusieurs routes avant d'être
+// centralisé ici ; toute route qui a besoin de "tout le staff" importe celui-ci
+// plutôt que de le redéclarer.
+export const STAFF_ROLES = ['TEACHER', 'DIRECTOR_CPE', 'RECTORAT'] as const
+
+export function jsonError(message: string, status: number): Response {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
+// Authentifie puis vérifie le rôle en un seul appel. Retourne l'utilisateur si
+// autorisé, sinon la Response d'erreur (401/403) à renvoyer telle quelle :
+//   const user = requireRole(request, STAFF_ROLES)
+//   if (user instanceof Response) return user
+export function requireRole(
+  request: Request,
+  allowedRoles: readonly string[]
+): { id: string; role: string } | Response {
+  const user = extractUser(request)
+  if (!user) return jsonError('Non autorisé', 401)
+  if (!allowedRoles.includes(user.role)) return jsonError('Accès refusé', 403)
+  return user
+}
+
 // Le token d'accès est court-vécu (1h) : s'il fuite, la fenêtre d'exploitation
 // est réduite par rapport à l'ancien JWT 7j. Le client le renouvelle via
 // /api/auth/refresh sans redemander le mot de passe. 1h plutôt que 15 min car
