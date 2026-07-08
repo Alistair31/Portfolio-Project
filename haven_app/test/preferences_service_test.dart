@@ -1,10 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform.dart';
+import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
 import 'package:haven_app/services/preferences.dart';
 
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    // token / refreshToken passent par flutter_secure_storage (voir S9 dans
+    // rapport_bugs.md) — sans ce fake, le MethodChannel natif n'existe pas en
+    // test et chaque appel lève une MissingPluginException.
+    FlutterSecureStoragePlatform.instance = TestFlutterSecureStoragePlatform({});
   });
 
   group('PreferencesService — token', () {
