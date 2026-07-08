@@ -407,3 +407,22 @@
 **Impact :** Un élève ou un membre du staff ne voyait pas les nouveaux messages de l'autre partie tant qu'il n'envoyait pas lui-même un message ou ne rechargeait pas la page.
 **Correction appliquée :** Ajout d'un `Timer.periodic` (4s) dans les deux pages, démarré dans `initState()` et annulé dans `dispose()`, qui rafraîchit silencieusement les données (pas de spinner, pas d'interruption de la saisie). Sur `ExchangePage`, le défilement automatique ne se déclenche que si le nombre de messages a réellement augmenté. Le polling est mis en pause pendant un envoi ou une mise à jour de statut en cours pour éviter les appels concurrents inutiles.
 **Limite connue :** reste du polling, pas du temps réel — acceptable à l'échelle actuelle de l'app, mais à revoir si le volume de messages augmente.
+
+---
+
+## Audit de sécurité — Troisième passe (2026-07-08)
+
+### S13. Aucun rate limiting sur les routes de signalement et de messagerie ✅ RÉSOLU
+
+**Fichiers :** `haven_backend/src/app/api/reports/route.ts` (POST), `reports/[id]/route.ts` (PATCH), `reports/[id]/escalate/route.ts`, `reports/[id]/messages/route.ts`, `reports/mine/[id]/messages/route.ts`
+**Sévérité :** HIGH | **Confiance :** 8/10
+**Description :** Aucune route sous `api/reports/**` n'appelait `rateLimit`, contrairement à `login`, `register` et aux routes `admin/*`. Ces routes sont authentifiées, donc pas brute-forçables au sens classique, mais rien n'empêchait un compte légitime (élève ou staff) de les appeler en boucle.
+**Impact :** Le plus grave concernait la messagerie — chaque message déclenche une notification push (`sendPushToUsers`, elle-même sans limite). Un compte élève ou staff compromis pouvait donc harceler l'autre partie via son propre canal de signalement, ou épuiser le quota Firebase Cloud Messaging. `POST /api/reports` sans limite permettait aussi de noyer la file de triage du staff sous de faux signalements. Particulièrement problématique dans une application dont la raison d'être est de protéger contre le harcèlement.
+**Correction appliquée :** Ajout de `rateLimitKeyForUser(userId, scope)` dans `lib/rateLimit.ts` — une variante de `rateLimitKey` qui limite par utilisateur plutôt que par IP (plus pertinent pour des routes déjà authentifiées, où plusieurs élèves peuvent partager une IP scolaire). Appliqué sur les 5 routes :
+
+- Messagerie (élève → staff et staff → élève) : 20 messages / 5 min / utilisateur
+- Création de signalement : 10 / 15 min / utilisateur
+- Changement de statut : 30 / 5 min / utilisateur (budget plus large — usage normal du staff en session de triage)
+- Escalade : 15 / 5 min / utilisateur
+
+Chaque dépassement retourne `429` avec un en-tête `Retry-After`, sur le même modèle que les routes déjà protégées.

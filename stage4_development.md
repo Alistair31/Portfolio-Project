@@ -403,6 +403,8 @@ At the end of each sprint, the team demonstrates completed features to stakehold
 | Bug #24 — Cancel button stayed visible past the 5-minute window | `report_detail_page.dart` | Added a `Timer` (`_scheduleCancelExpiry`) that triggers a rebuild exactly when the window expires, hiding the button automatically; cancelled in `dispose()` to avoid `setState` after unmount. See `rapport_bugs.md`. |
 | Bug #25 — "Parler à l'équipe" sent nothing (decorative input only) | `exchange_page.dart`, `staff_report_detail_page.dart`, new `Message` model | Implemented full two-way messaging between student and staff (`POST /api/reports/[id]/messages`, `POST /api/reports/mine/[id]/messages`). See `rapport_bugs.md`. |
 | Bug #26 — Transient Gradle/SDK build failure after adding `flutter_secure_storage` | N/A (tooling) | Same root cause as bug #9 (antivirus locking a file mid-install); `flutter clean` + rebuild resolved it. |
+| Bug #27 — First-time staff login landed on an empty student home | `onboarding_page.dart`, `haven_start.dart` | Onboarding hardcoded `StudentHomePage()` regardless of the logged-in role. Extracted shared `homeForRole()` (`services/role_router.dart`), used by both onboarding and auto-login. See `rapport_bugs.md`. |
+| Bug #28 — New chat messages invisible without sending one / reloading | `exchange_page.dart`, `staff_report_detail_page.dart` | Added a silent 4s polling `Timer` in both pages (no WebSocket/SSE backend). See `rapport_bugs.md`. |
 
 ---
 
@@ -418,6 +420,10 @@ Plusieurs fonctionnalités ont été livrées après la clôture du Sprint 3 et 
 | Refresh tokens + rate limiting | ✅ Livré | Rotation des refresh tokens (`auth/refresh`, `auth/logout`), et rate limiting (`lib/rateLimit.ts`) sur `login`, `register`, `register/parent` et les routes `admin/*`. |
 | Deuxième audit de sécurité (S5-S12) | ✅ Livré | Voir `rapport_bugs.md` — brute force `parentCode`, rate limiting admin, stockage sécurisé des tokens (`flutter_secure_storage`), `allowBackup`, signature de release, incohérence de version Prisma post-fusion. |
 | Factorisation `requireRole()`/`jsonError()` côté backend | ✅ Livré | `haven_backend/src/lib/auth.ts` — élimine la duplication du tableau `STAFF_ROLES` et du boilerplate 401/403 sur `stats/route.ts`, `stats/timeline/route.ts`, `reports/[id]/route.ts`, `reports/[id]/messages/route.ts`. |
+| Rôle-based routing (`homeForRole`) | ✅ Livré | Voir Bug #27 ci-dessus. |
+| Polling de la messagerie en direct | ✅ Livré | Voir Bug #28 ci-dessus. |
+| Troisième audit de sécurité (S13) | ✅ Livré | Voir `rapport_bugs.md` — aucune route de signalement/messagerie n'était protégée par rate limiting ; un compte compromis pouvait harceler via son propre canal de signalement. `rateLimitKeyForUser()` ajouté et appliqué aux 5 routes concernées (création, statut, escalade, messagerie ×2). |
+| Diagramme d'architecture (Stage 3) mis à jour | ✅ Livré | `Images/arch.svg` régénéré pour refléter le rôle Parent, l'authentification JWT + refresh tokens, le rate limiting et l'anonymisation ; source Mermaid conservée dans `Images/arch.mmd`. |
 
 **À noter pour la suite :** ces livraisons n'ayant pas été planifiées, elles n'ont pas de critères d'acceptation formels ni de couverture dans les Suites de tests 1-5 ci-dessous (toujours `_TBD_`).
 
