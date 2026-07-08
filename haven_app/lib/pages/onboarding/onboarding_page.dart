@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../services/preferences.dart';
+import '../../services/role_router.dart';
+import '../../services/session_service.dart';
 import '../../theme/app_colors.dart';
-import '../student/student_home_page.dart';
 import 'onboarding_clair.dart';
 import 'onboarding_lueur.dart';
 import 'onboarding_refuge.dart';
@@ -41,8 +42,13 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
   Future<void> _finish() async {
     await PreferencesService().setOnboardingSeen();
+    if (!mounted) return;
+    // L'onboarding est montré au premier login sur l'appareil, quel que soit le
+    // rôle (le flag "vu" est stocké par appareil, pas par compte) — router par
+    // le rôle de la session plutôt que de supposer STUDENT (voir bug #27).
+    final role = SessionService().getRole() ?? '';
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const StudentHomePage()),
+      MaterialPageRoute(builder: (_) => homeForRole(role)),
     );
   }
 
