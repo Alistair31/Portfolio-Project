@@ -104,4 +104,14 @@ class AppColors {
   /// Grand bloc « Besoin de parler ? » — dégradé (haut -> bas).
   static const Color heroGreenTop = Color(0xFF82D99C);
   static const Color heroGreenBottom = Color(0xFFA9E8BF);
+
+  /// Couleur associée au statut d'un signalement (badges, timeline de suivi).
+  static Color statusColor(String status) {
+    switch (status) {
+      case 'PENDING':     return const Color(0xFFE89B4E);
+      case 'IN_PROGRESS': return const Color(0xFF4A90D9);
+      case 'CLOSED':      return eucalyptus;
+      default:            return edward;
+    }
+  }
 }
