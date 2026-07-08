@@ -43,3 +43,11 @@ function getClientIp(request: Request): string {
 export function rateLimitKey(request: Request, scope: string): string {
   return `${scope}:${getClientIp(request)}`
 }
+
+// Pour les routes déjà authentifiées (signalements, messagerie...), une clé
+// par IP est trop grossière (plusieurs élèves derrière le même NAT/wifi
+// scolaire partageraient un budget) et n'aide pas contre un compte compromis
+// qui spamme depuis sa propre IP. On limite plutôt par utilisateur.
+export function rateLimitKeyForUser(userId: string, scope: string): string {
+  return `${scope}:user:${userId}`
+}

@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import { extractUser } from '@/lib/auth'
+import { rateLimit, rateLimitKeyForUser } from '@/lib/rateLimit'
 import { sendPushToUsers } from '@/lib/push'
 
 // ---------------------------------------------------------------------------
@@ -11,6 +12,12 @@ import { sendPushToUsers } from '@/lib/push'
 const schema = z.object({
   body: z.string().trim().min(1, 'Message vide.').max(1000, 'Message trop long (1000 caractères max).'),
 })
+
+// Chaque message déclenche une notification push : sans limite, un compte
+// compromis pourrait harceler l'élève/le staff en face via son propre canal
+// de signalement. Cf. rapport_bugs.md S13.
+const MESSAGE_LIMIT = 20
+const MESSAGE_WINDOW_MS = 5 * 60 * 1000
 
 export async function POST(
   request: Request,
@@ -29,6 +36,16 @@ export async function POST(
       status: 403,
       headers: { 'Content-Type': 'application/json' },
     })
+  }
+
+  const { allowed, retryAfterSeconds } = rateLimit(
+    rateLimitKeyForUser(user.id, 'report-message'), MESSAGE_LIMIT, MESSAGE_WINDOW_MS
+  )
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ error: `Trop de messages envoyés. Réessaie dans ${retryAfterSeconds}s.` }),
+      { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) } }
+    )
   }
 
   const body = await request.json()

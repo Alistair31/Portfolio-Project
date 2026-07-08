@@ -2,6 +2,7 @@ import { db } from '@/lib/db'
 import { z } from 'zod'
 import { applyAnonymity } from '@/lib/anonymize'
 import { requireRole, STAFF_ROLES } from '@/lib/auth'
+import { rateLimit, rateLimitKeyForUser } from '@/lib/rateLimit'
 import { sendPushToUsers } from '@/lib/push'
 
 // ---------------------------------------------------------------------------
@@ -130,12 +131,27 @@ const patchSchema = z.object({
 // des signalements escaladés (voir escalate/route.ts).
 const PATCH_ROLES = ['TEACHER', 'DIRECTOR_CPE'] as const
 
+// Cf. rapport_bugs.md S13. Budget plus large que la messagerie : un membre du
+// staff peut légitimement traiter beaucoup de signalements dans une session.
+const STATUS_LIMIT = 30
+const STATUS_WINDOW_MS = 5 * 60 * 1000
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const user = requireRole(request, PATCH_ROLES)
   if (user instanceof Response) return user
+
+  const { allowed, retryAfterSeconds } = rateLimit(
+    rateLimitKeyForUser(user.id, 'report-status'), STATUS_LIMIT, STATUS_WINDOW_MS
+  )
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ error: `Trop de mises à jour. Réessaie dans ${retryAfterSeconds}s.` }),
+      { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) } }
+    )
+  }
 
   const body = await request.json()
   const result = patchSchema.safeParse(body)

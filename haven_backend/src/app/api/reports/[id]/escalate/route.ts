@@ -1,5 +1,6 @@
 import { db } from '@/lib/db'
 import { extractUser } from '@/lib/auth'
+import { rateLimit, rateLimitKeyForUser } from '@/lib/rateLimit'
 import { sendPushToUsers } from '@/lib/push'
 import { z } from 'zod'
 
@@ -8,6 +9,10 @@ const schema = z.object({
 })
 
 const ESCALABLE_ROLES = ['TEACHER', 'DIRECTOR_CPE'] as const
+
+// Cf. rapport_bugs.md S13.
+const ESCALATE_LIMIT = 15
+const ESCALATE_WINDOW_MS = 5 * 60 * 1000
 
 // ---------------------------------------------------------------------------
 // POST /api/reports/[id]/escalate
@@ -31,6 +36,16 @@ export async function POST(
     return new Response(
       JSON.stringify({ error: 'Seuls les professeurs et directeurs peuvent transférer au Rectorat.' }),
       { status: 403, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+
+  const { allowed, retryAfterSeconds } = rateLimit(
+    rateLimitKeyForUser(user.id, 'report-escalate'), ESCALATE_LIMIT, ESCALATE_WINDOW_MS
+  )
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ error: `Trop de transferts. Réessaie dans ${retryAfterSeconds}s.` }),
+      { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) } }
     )
   }
 

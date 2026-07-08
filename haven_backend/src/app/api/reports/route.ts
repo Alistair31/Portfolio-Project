@@ -4,7 +4,13 @@ import { applyAnonymity } from '@/lib/anonymize'
 import { generateTrackingCode } from '@/lib/tracking'
 import { computeIntegrityHash } from '@/lib/integrity'
 import { extractUser } from '@/lib/auth'
+import { rateLimit, rateLimitKeyForUser } from '@/lib/rateLimit'
 import { sendPushToUsers } from '@/lib/push'
+
+// Cf. rapport_bugs.md S13 — sans limite, un compte élève pouvait noyer la
+// file de triage du staff sous de faux signalements.
+const REPORT_LIMIT = 10
+const REPORT_WINDOW_MS = 15 * 60 * 1000
 
 const schema = z.object({
   mode:           z.enum(['VICTIM', 'WITNESS']).default('VICTIM'),
@@ -29,6 +35,16 @@ export async function POST(request: Request) {
       status: 403,
       headers: { 'Content-Type': 'application/json' },
     })
+  }
+
+  const { allowed, retryAfterSeconds } = rateLimit(
+    rateLimitKeyForUser(user.id, 'report-create'), REPORT_LIMIT, REPORT_WINDOW_MS
+  )
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ error: `Trop de signalements envoyés. Réessaie dans ${retryAfterSeconds}s.` }),
+      { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) } }
+    )
   }
 
   const body = await request.json()

@@ -1,6 +1,7 @@
 import { db } from '@/lib/db'
 import { z } from 'zod'
 import { requireRole, STAFF_ROLES } from '@/lib/auth'
+import { rateLimit, rateLimitKeyForUser } from '@/lib/rateLimit'
 import { sendPushToUsers } from '@/lib/push'
 
 // ---------------------------------------------------------------------------
@@ -13,12 +14,26 @@ const schema = z.object({
   body: z.string().trim().min(1, 'Message vide.').max(1000, 'Message trop long (1000 caractères max).'),
 })
 
+// Cf. rapport_bugs.md S13 — même protection anti-spam que le pendant élève.
+const MESSAGE_LIMIT = 20
+const MESSAGE_WINDOW_MS = 5 * 60 * 1000
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const user = requireRole(request, STAFF_ROLES)
   if (user instanceof Response) return user
+
+  const { allowed, retryAfterSeconds } = rateLimit(
+    rateLimitKeyForUser(user.id, 'report-message'), MESSAGE_LIMIT, MESSAGE_WINDOW_MS
+  )
+  if (!allowed) {
+    return new Response(
+      JSON.stringify({ error: `Trop de messages envoyés. Réessaie dans ${retryAfterSeconds}s.` }),
+      { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': String(retryAfterSeconds) } }
+    )
+  }
 
   const body = await request.json()
   const result = schema.safeParse(body)
