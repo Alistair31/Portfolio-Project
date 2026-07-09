@@ -13,7 +13,7 @@ import '../chatbot/chatbot_page.dart';
 import '../report/report_target_page.dart';
 import 'account_page.dart';
 import 'safe_space_page.dart';
-import 'suivi_page.dart';
+import 'follow_up_page.dart';
 
 /// Écran 3 · Espace élève — « Accueil connecté ».
 /// Page d'accueil de l'élève une fois connecté·e : entrée vers la
