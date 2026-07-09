@@ -365,7 +365,7 @@ At the end of each sprint, the team demonstrates completed features to stakehold
 
 | Task | Planned | Completed | Notes |
 | --- | --- | --- | --- |
-| Unit test suite | ✅ | ✅ | 83 Flutter tests across 10 files — `SessionService`, `PreferencesService`, API models, `ApiService` (login/reports/messaging, mocked via `http.runWithClient`), `AppColors.statusColor`, `homeForRole` role routing, `ParentPortalPage`, `ReportSummaryPage`, `SafetyPage`, default widget test |
+| Unit test suite | ✅ | ✅ | 89 Flutter tests across 11 files — `SessionService`, `PreferencesService`, API models, `ApiService` (login/reports/messaging, mocked via `http.runWithClient`), `AppColors.statusColor`, `homeForRole` role routing, `Responsive` tablet scaling, `ParentPortalPage`, `ReportSummaryPage`, `SafetyPage`, default widget test |
 | Critical bug fixes | ✅ | ✅ | Bugs #21, #22, #23 fixed (auto-login, trackingCode, dead method) |
 | Final QA pass | ✅ | ✅ | 0 compilation errors, 0 critical warnings, 68 / 68 tests pass |
 | In-app notifications | ✅ | ⚠️ Partial | `GET/PATCH /api/notifications` endpoints created — Flutter UI not implemented |
@@ -424,6 +424,7 @@ Plusieurs fonctionnalités ont été livrées après la clôture du Sprint 3 et 
 | Polling de la messagerie en direct | ✅ Livré | Voir Bug #28 ci-dessus. |
 | Troisième audit de sécurité (S13) | ✅ Livré | Voir `rapport_bugs.md` — aucune route de signalement/messagerie n'était protégée par rate limiting ; un compte compromis pouvait harceler via son propre canal de signalement. `rateLimitKeyForUser()` ajouté et appliqué aux 5 routes concernées (création, statut, escalade, messagerie ×2). |
 | Diagramme d'architecture (Stage 3) mis à jour | ✅ Livré | `Images/arch.svg` régénéré pour refléter le rôle Parent, l'authentification JWT + refresh tokens, le rate limiting et l'anonymisation ; source Mermaid conservée dans `Images/arch.mmd`. |
+| Lisibilité sur tablette | ✅ Livré | `lib/theme/responsive.dart` — `Responsive.boostedTextScaler()` branché une seule fois dans `main.dart` (`MaterialApp.builder`) : combine le `TextScaler` système (accessibilité) avec un boost ×1.15 au-delà de 600dp de `shortestSide`, sans toucher aux 250+ `TextStyle(fontSize:...)` codés en dur. `Responsive.scale()` disponible pour les dimensions (padding, icônes) à adopter au cas par cas sur les écrans retouchés — pas rétrofité automatiquement sur l'existant. Tests : `test/responsive_test.dart`. |
 
 **À noter pour la suite :** ces livraisons n'ayant pas été planifiées, elles n'ont pas de critères d'acceptation formels ni de couverture dans les Suites de tests 1-5 ci-dessous (toujours `_TBD_`).
 
