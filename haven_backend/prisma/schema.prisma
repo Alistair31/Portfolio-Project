@@ -1,0 +1,203 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  // Le client runtime se connecte via l'adaptateur PrismaPg (voir src/lib/db.ts),
+  // qui ignore cette valeur — mais la CLI (generate/migrate) sur Prisma 6.19.3 exige
+  // un `url` déclaré ici pour valider le schéma, contrairement à Prisma 7.
+  url = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  PARENT
+  TEACHER
+  DIRECTOR_CPE
+  RECTORAT
+}
+
+enum ReportType {
+  PHYSICAL
+  VERBAL
+  SEXUAL
+  CYBER
+  OTHER
+}
+
+enum ReportStatus {
+  PENDING
+  IN_PROGRESS
+  CLOSED
+}
+
+enum AnonymityLevel {
+  NONE
+  NAME_HIDDEN
+  NAME_AND_CLASS_HIDDEN
+  FULLY_ANONYMOUS
+}
+
+enum ReportMode {
+  VICTIM
+  WITNESS
+}
+
+enum DeletionRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  className    String
+  schoolCode   String
+  role         Role
+  fcmToken     String?
+  parentCode   String?  @unique
+  createdAt    DateTime @default(now())
+
+  reports          Report[]
+  followUps        FollowUp[]
+  messages         Message[]
+  notifications    Notification[]
+  moods            Mood[]
+  deletionRequests AccountDeletionRequest[]
+  parentLinks      ParentStudentLink[] @relation("ParentUser")
+  studentLinks     ParentStudentLink[] @relation("StudentUser")
+  refreshTokens    RefreshToken[]
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ParentStudentLink {
+  id        String   @id @default(cuid())
+  parentId  String
+  studentId String
+  createdAt DateTime @default(now())
+
+  parent  User @relation("ParentUser",  fields: [parentId],  references: [id], onDelete: Cascade)
+  student User @relation("StudentUser", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, studentId])
+}
+
+model AccountDeletionRequest {
+  id          String                @id @default(cuid())
+  userId      String
+  status      DeletionRequestStatus @default(PENDING)
+  createdAt   DateTime              @default(now())
+  processedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  id             String         @id @default(cuid())
+  trackingCode   String         @unique
+  mode           ReportMode     @default(VICTIM)
+  type           ReportType
+  gravity        Int
+  description    String
+  targetLevel    Role
+  // Niveau (rôle) d'où le signalement a été transféré au Rectorat, le cas échéant.
+  // `targetLevel` devient RECTORAT à l'escalade — ce champ conserve le niveau
+  // d'origine pour que le signalement reste comptabilisé dans les stats de ce
+  // niveau (et de son école). null = jamais escaladé.
+  escalatedFromLevel Role?
+  anonymityLevel AnonymityLevel
+  status         ReportStatus   @default(PENDING)
+  integrityHash  String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  authorId       String
+
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  followUps     FollowUp[]
+  messages      Message[]
+  notifications Notification[]
+}
+
+model FollowUp {
+  id        String       @id @default(cuid())
+  notes     String
+  newStatus ReportStatus
+  createdAt DateTime     @default(now())
+  reportId  String
+  staffId   String
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  staff  User   @relation(fields: [staffId], references: [id], onDelete: Cascade)
+}
+
+// Message libre échangé sur un signalement entre l'élève auteur et le staff.
+// Distinct de FollowUp (qui matérialise un changement de statut) : ici c'est de
+// la conversation pure, dans les deux sens. `senderRole` est dénormalisé pour
+// pouvoir afficher/aligner les bulles sans re-résoudre le rôle de l'expéditeur.
+model Message {
+  id         String   @id @default(cuid())
+  body       String
+  senderRole Role
+  createdAt  DateTime @default(now())
+  reportId   String
+  senderId   String
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  sender User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([reportId, createdAt])
+}
+
+model Notification {
+  id       String   @id @default(cuid())
+  message  String
+  read     Boolean  @default(false)
+  sentAt   DateTime @default(now())
+  userId   String
+  reportId String
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+}
+
+enum SchoolType {
+  COLLEGE
+  LYCEE
+  BTS_CPGE
+  MIXED
+}
+
+model Mood {
+  id        String   @id @default(cuid())
+  level     Int
+  createdAt DateTime @default(now())
+  userId    String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model School {
+  id        String     @id @default(cuid())
+  code      String     @unique
+  name      String
+  type      SchoolType @default(MIXED)
+  createdAt DateTime   @default(now())
+}

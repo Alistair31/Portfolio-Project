@@ -23,8 +23,8 @@
     <a href="https://github.com/Alistair31/Portfolio-Project/graphs/contributors"><img src="https://img.shields.io/github/contributors/Alistair31/Portfolio-Project.svg?style=for-the-badge" alt="Contributors"></a>
     <a href="https://github.com/Alistair31"><img src="https://img.shields.io/badge/github-Alistair31-blue?logo=github&style=for-the-badge"></a>
   </p>
-SPITZ Thomas: Director of HavenLab
-BALLAIS Romain: 
+SPITZ Thomas: Founder & Président of HavenLab
+BALLAIS Romain: Chief Technical Officer
 LANGE Jarod: Project Manager/Fullstack developer 
 
 MERLIERE Gabriel: Fullstack developer  

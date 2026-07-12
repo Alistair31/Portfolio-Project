@@ -1,0 +1,37 @@
+flowchart TD
+    subgraph Client["Flutter Mobile App"]
+        Student(["Student"])
+        Staff(["Staff — Teacher / Director-CPE / Rectorat"])
+        Parent(["Parent"])
+    end
+
+    subgraph API["Next.js REST API"]
+        Auth["Authentication<br/>JWT (1h) + Refresh Tokens (30d, rotated)"]
+        RateLimit["Rate Limiting<br/>login / register / admin"]
+        RBAC["Role-Based Access Control"]
+        Anon["Anonymization<br/>per report anonymityLevel"]
+    end
+
+    ORM["Prisma ORM"]
+    DB[("PostgreSQL")]
+    FCM{{"Firebase Cloud Messaging"}}
+
+    Student -- HTTPS / REST --> API
+    Staff -- HTTPS / REST --> API
+    Parent -- HTTPS / REST --> API
+
+    API --> ORM --> DB
+
+    API -- report update / new message --> FCM
+    FCM -. push notification .-> Student
+    FCM -. push notification .-> Staff
+
+    classDef client fill:#E3FAE8,stroke:#2C8A6B,color:#14201B;
+    classDef api fill:#CBF6D4,stroke:#14201B,color:#14201B;
+    classDef data fill:#FFFFFF,stroke:#56655D,color:#14201B;
+    classDef ext fill:#FAF9F4,stroke:#8A958F,color:#14201B,stroke-dasharray: 4 3;
+
+    class Student,Staff,Parent client;
+    class Auth,RateLimit,RBAC,Anon api;
+    class ORM,DB data;
+    class FCM ext;
