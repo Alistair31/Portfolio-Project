@@ -93,7 +93,7 @@ The MVP targets a single pilot school, with role-based access for students, teac
 Haven follows a client-server architecture: the Flutter app talks exclusively to a Next.js REST API, which owns all business logic, authentication, anonymization and role-based access control, and persists data through Prisma into PostgreSQL.
 
 <p align="center">
-  <img src="Images/arch.svg" alt="Haven architecture diagram" width="720" />
+  <img src="Images/arch.png" alt="Haven architecture diagram" width="720" />
 </p>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -199,8 +199,6 @@ If you believe you've found a security issue, please report it privately rather 
 | [`Stage2_Timeline.md`](Stage2_Timeline.md) | SMART objectives and project Gantt planning |
 | [`Stage3_technical_documentation.md`](Stage3_technical_documentation.md) | User stories, mockups, architecture, class/sequence diagrams, API spec, SCM/QA plans |
 | [`stage4_development.md`](stage4_development.md) | Sprint planning, reviews & retrospectives, MVP delivery status |
-| [`API.md`](API.md) | Internal REST API contract |
-| [`rapport_bugs.md`](rapport_bugs.md) | Bug tracker and security audit log |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
